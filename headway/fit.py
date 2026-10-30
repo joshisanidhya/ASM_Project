@@ -48,6 +48,7 @@ def fit_all(counts, tmin, n_iter=10000, n_warmup=5000, chains=2, seed=0,
             names=None, workers=None):
     """{name: (posterior-mean theta, draws)} for each distribution.
 
+    draws has shape (chains, n_iter - n_warmup, n_params), warmup already dropped.
     Chains start at the MAP so the warmup only has to tune the proposal. Every
     (distribution, chain) pair is independent, so they all run in parallel.
     """
@@ -57,6 +58,6 @@ def fit_all(counts, tmin, n_iter=10000, n_warmup=5000, chains=2, seed=0,
                           for n, x0 in zip(names, x0s) for c in range(chains)], workers)
     out = {}
     for i, n in enumerate(names):
-        d = np.vstack(draws[i * chains:(i + 1) * chains])
-        out[n] = (d.mean(axis=0), d)  # paper: parameter = mean of post-warmup draws
+        d = np.stack(draws[i * chains:(i + 1) * chains])
+        out[n] = (d.reshape(-1, d.shape[-1]).mean(axis=0), d)  # paper: mean of post-warmup draws
     return out

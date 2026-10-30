@@ -38,8 +38,9 @@ def find_path(dataset, root):
 def run_dataset(name, path, a):
     # Imported here, not at the top: spawned workers re-import this file, and
     # matplotlib / scipy.stats would add seconds to every worker's start-up.
+    from headway.diagnostics import split_rhat
     from headway.metrics import evaluate
-    from headway.plots import plot_fits
+    from headway.plots import plot_fits, plot_posterior
 
     kw = {"location": a.location} if name == "ngsim" and a.location else {}
     data = LOADERS[name](path, workers=a.workers, **kw)
@@ -49,17 +50,29 @@ def run_dataset(name, path, a):
     print(f"\n{name}: {len(data):,} headways, mean {data.mean():.2f}s  ({path})")
 
     fits = fit_all(counts, data.min(), n_iter=a.iters, n_warmup=a.iters // 2, workers=a.workers)
-    params, rows = {}, []
-    for dname, (theta, _) in fits.items():
+    out = Path(a.out) / name
+    (out / "draws").mkdir(parents=True, exist_ok=True)
+    (out / "traces").mkdir(exist_ok=True)
+
+    params, rows, post = {}, [], []
+    for dname, (theta, draws) in fits.items():
+        pnames, slug = DISTS[dname].params, dname.lower().replace(" ", "_")
         params[dname] = theta
-        rows.append({"distribution": dname, **dict(zip(DISTS[dname].params, theta)),
+        rows.append({"distribution": dname, **dict(zip(pnames, theta)),
                      **evaluate(DISTS[dname], theta, data, counts)})
-        print(f"  {dname:22s} KL={rows[-1]['kl']:.4f}  W={rows[-1]['wasserstein']:.4f}")
+        rhat = split_rhat(draws)
+        flat = draws.reshape(-1, draws.shape[-1])
+        post += [{"distribution": dname, "param": p, "mean": m, "sd": s, "rhat": r}
+                 for p, m, s, r in zip(pnames, flat.mean(0), flat.std(0), rhat)]
+        np.savez_compressed(out / "draws" / f"{slug}.npz", draws=draws, params=np.array(pnames))
+        plot_posterior(f"{name}: {dname}", pnames, draws, out / "traces" / f"{slug}.png")
+        flag = "" if (rhat < 1.05).all() else "  <-- not converged"
+        print(f"  {dname:22s} KL={rows[-1]['kl']:.4f}  W={rows[-1]['wasserstein']:.4f}  "
+              f"max R-hat={np.nanmax(rhat):.3f}{flag}")
 
     res = pd.DataFrame(rows).set_index("distribution")
     stats = ["ks_D", "ks_p", "chi2", "chi2_dof", "chi2_p", "kl", "wasserstein"]
-    out = Path(a.out) / name
-    out.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame(post).to_csv(out / "posterior.csv", index=False)
     res.drop(columns=stats).to_csv(out / "params.csv")
     res[["ks_D", "ks_p", "chi2", "chi2_dof", "chi2_p"]].to_csv(out / "tests.csv")
     res[["kl", "wasserstein"]].to_csv(out / "metrics.csv")
