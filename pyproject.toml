@@ -1,0 +1,12 @@
+[project]
+name = "headway"
+version = "0.1.0"
+description = "Headway distribution b^|t-a| (Leungbootnak et al.) fitted via MCMC and compared with six baselines"
+requires-python = ">=3.11"
+dependencies = ["numpy", "pandas", "scipy", "matplotlib"]
+
+[dependency-groups]
+dev = ["pytest"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]

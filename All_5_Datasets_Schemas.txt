@@ -1,0 +1,201 @@
+highD DATASET SCHEMA
+===================
+
+Common files:
+- recordingMeta.csv
+- tracksMeta.csv
+- tracks.csv
+
+1. recordingMeta.csv — recording-level metadata
+Common fields:
+- id
+- frameRate
+- locationId
+- speedLimit
+
+2. tracksMeta.csv — one row per vehicle track
+Common fields:
+- id
+- width
+- height
+- class
+- numFrames
+- minXVelocity
+- maxXVelocity
+- meanXVelocity
+- minTHW
+- minDHW
+- numLaneChanges
+
+3. tracks.csv — vehicle trajectory samples
+Common fields:
+- frame
+- id
+- x
+- y
+- xVelocity
+- yVelocity
+- xAcceleration
+- yAcceleration
+- laneId
+- precedingId
+- followingId
+- dhw
+- thw
+- ttc
+
+Notes:
+- Confirm exact field names against the downloaded release and its documentation.
+- THW is time headway; DHW is distance headway. Verify units and definitions in the dataset documentation.
+
+
+
+========================================================================
+
+
+exiD DATASET SCHEMA
+===================
+
+The exiD dataset commonly uses a multi-file structure similar to highD, with trajectory tracks, track-level metadata, and recording-level metadata. Additional road-user, road, mapping, or enrichment fields may be present depending on the release.
+
+Common field concepts to inspect:
+- Recording identifier and frame rate
+- Vehicle/road-user track identifier
+- Frame or timestamp
+- Position coordinates (x, y)
+- Velocity and acceleration components
+- Lane identifier
+- Preceding/following vehicle identifiers, where available
+- Time headway (THW), distance headway (DHW), and time-to-collision (TTC), where available
+- Vehicle/road-user dimensions and class
+- Recording/site metadata
+
+Important:
+- This is a field checklist, not a guaranteed exact column list.
+- Inspect the downloaded CSV headers and official documentation before building a parser.
+- Keep unavailable fields missing rather than inventing values.
+
+
+
+========================================================================
+
+
+NGSIM VEHICLE TRAJECTORY SCHEMA
+===============================
+
+Common original columns:
+1. Vehicle_ID
+2. Frame_ID
+3. Total_Frames
+4. Global_Time
+5. Local_X
+6. Local_Y
+7. Global_X
+8. Global_Y
+9. v_Length
+10. v_Width
+11. v_Class
+12. v_Vel
+13. v_Acc
+14. Lane_ID
+15. Preceding
+16. Following
+17. Space_Headway
+18. Time_Headway
+
+Notes:
+- These are common original column names; verify the specific file/version.
+- Check coordinate, velocity, acceleration, and time units before conversion.
+- Space_Headway is spatial headway; Time_Headway is temporal headway.
+
+
+
+========================================================================
+
+
+WAYMO OPEN MOTION DATASET SCHEMA
+=================================
+
+Format:
+- TFRecord files containing serialized protobuf Scenario messages.
+
+Common Scenario-level fields:
+- scenario_id
+- timestamps_seconds
+- tracks
+- map_features
+- dynamic_map_states
+
+Common Track fields:
+- id
+- object_type
+- states
+
+Common Track State fields:
+- center_x
+- center_y
+- center_z
+- velocity_x
+- velocity_y
+- heading
+- length
+- width
+- height
+- valid
+
+Notes:
+- Exact protobuf field definitions depend on the dataset release/schema.
+- Track states are time-indexed; use timestamps_seconds to associate states with time.
+- The dataset does not necessarily provide a ready-made car-following headway field for every track. Headway may need to be derived carefully from trajectories.
+- Consult the official schema for the exact version being used.
+
+
+
+========================================================================
+
+
+LYFT LEVEL 5 DATASET SCHEMA
+===========================
+
+IMPORTANT:
+The exact schema depends on the archived Level 5 release. Verify the files and documentation for the version actually obtained. The fields below are schema hints from older SDK-style autonomous-driving datasets and are not guaranteed for every Lyft release.
+
+Common record/table concepts to check:
+
+1. scene
+- token
+- name
+- nbr_samples
+- first_sample_token
+- last_sample_token
+
+2. sample
+- token
+- timestamp
+
+3. sample_data
+- token
+- timestamp
+- filename
+- sensor_modality
+- ego_pose_token
+
+4. sample_annotation
+- instance_token
+- translation
+- size
+- rotation
+- category_name
+
+5. ego_pose
+- translation
+- rotation
+- timestamp
+
+6. Map-related records
+- Map identifiers and map/semantic information (exact fields vary)
+
+Notes:
+- This may not match the exact Lyft Level 5 subset referenced in the research paper.
+- Confirm licensing, dataset version, and exact field names before using it.
+- Do not assume a ready-made time-headway field exists; it may need to be derived from suitable trajectories.
