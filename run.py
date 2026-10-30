@@ -1,13 +1,13 @@
 """Fit the proposed + baseline headway distributions (Leungbootnak et al.).
 
-    uv run python run.py                       # every dataset found under data/
+    uv run python run.py                       # ngsim + highd, whichever is found under data/
     uv run python run.py --dataset highd       # one dataset from data/highd
-    uv run python run.py --dataset lyft --path D:\\somewhere\\train.zarr
+    uv run python run.py --dataset lyft        # opt-in; needs `uv sync --extra lyft`
 
 Expected layout (any dataset that is missing is skipped):
     data/ngsim/<export>.csv     NGSIM Data.gov export
     data/highd/NN_tracks.csv    highD recordings (+ NN_recordingMeta.csv)
-    data/lyft/<name>.zarr       Lyft Level 5 Prediction zarr folder
+    data/lyft/<name>.zarr       Lyft Level 5 Prediction zarr folder (not in the default run)
 
 Writes, per dataset, outputs/<dataset>/{params,tests,metrics}.csv + fit.png
 (paper Tables 3-5, Figure 5) and, across datasets, outputs/all_results.csv.
@@ -70,7 +70,8 @@ def run_dataset(name, path, a):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--dataset", choices=[*LOADERS, "all"], default="all")
+    ap.add_argument("--dataset", choices=[*LOADERS, "all"], default="all",
+                    help="'all' = ngsim + highd (Lyft is opt-in)")
     ap.add_argument("--data-dir", default="data", help="root holding ngsim/, highd/, lyft/")
     ap.add_argument("--path", help="explicit path, overrides --data-dir (single dataset only)")
     ap.add_argument("--location", default="i-80", help="NGSIM only: Location to keep (paper: i-80)")
@@ -79,7 +80,7 @@ def main():
     ap.add_argument("--out", default="outputs")
     a = ap.parse_args()
 
-    names = list(LOADERS) if a.dataset == "all" else [a.dataset]
+    names = ["ngsim", "highd"] if a.dataset == "all" else [a.dataset]
     if a.path and len(names) != 1:
         ap.error("--path needs a single --dataset")
 

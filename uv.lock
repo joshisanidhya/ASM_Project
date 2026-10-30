@@ -344,6 +344,10 @@ dependencies = [
     { name = "pandas" },
     { name = "scipy", version = "1.17.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "scipy", version = "1.18.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+]
+
+[package.optional-dependencies]
+lyft = [
     { name = "zarr" },
 ]
 
@@ -358,8 +362,9 @@ requires-dist = [
     { name = "numpy" },
     { name = "pandas" },
     { name = "scipy" },
-    { name = "zarr", specifier = "<3" },
+    { name = "zarr", marker = "extra == 'lyft'", specifier = "<3" },
 ]
+provides-extras = ["lyft"]
 
 [package.metadata.requires-dev]
 dev = [{ name = "pytest" }]
