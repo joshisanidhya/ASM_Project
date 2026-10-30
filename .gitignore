@@ -1,6 +1,8 @@
+*.part
 .venv/
 *.csv
-*.part
 __pycache__/
 .pytest_cache/
 outputs/
+data/*/*
+!data/*/.gitkeep

@@ -2,8 +2,9 @@
 import numpy as np
 from scipy.optimize import minimize
 
-from .distributions import CENTERS, Dist
+from .distributions import CENTERS, DISTS, Dist
 from .mcmc import metropolis
+from .parallel import pmap
 
 
 def make_logpost(dist: Dist, counts, tmin):
@@ -25,17 +26,37 @@ def make_logpost(dist: Dist, counts, tmin):
     return logpost
 
 
-def fit(dist: Dist, counts, tmin, n_iter=10000, n_warmup=5000, chains=2, seed=0):
-    """Return posterior-mean parameters (paper: mean of the post-warmup draws)."""
+# Tasks take distribution *names* (Dist holds lambdas, which can't be pickled to workers).
+def _map_start(task):
+    name, counts, tmin = task
+    dist = DISTS[name]
+    logpost = make_logpost(dist, counts, tmin)
     cdf = np.cumsum(counts) / counts.sum()
     median, mean = CENTERS[np.searchsorted(cdf, 0.5)], CENTERS @ counts / counts.sum()
-    logpost = make_logpost(dist, counts, tmin)
-
-    # MCMC chains start at the MAP so 5000 warmup draws only have to tune the proposal.
     nll = lambda th: -v if np.isfinite(v := logpost(th)) else 1e300
-    x0 = minimize(nll, dist.init(median, mean), method="Nelder-Mead",
-                  options={"xatol": 1e-8, "fatol": 1e-8, "maxiter": 5000}).x
+    return minimize(nll, dist.init(median, mean), method="Nelder-Mead",
+                    options={"xatol": 1e-8, "fatol": 1e-8, "maxiter": 5000}).x
 
-    rng = np.random.default_rng(seed)
-    draws = np.vstack([metropolis(logpost, x0, n_iter, n_warmup, rng) for _ in range(chains)])
-    return draws.mean(axis=0), draws
+
+def _chain(task):
+    name, counts, tmin, x0, c, n_iter, n_warmup, seed = task
+    logpost = make_logpost(DISTS[name], counts, tmin)
+    return metropolis(logpost, x0, n_iter, n_warmup, np.random.default_rng([seed, c]))
+
+
+def fit_all(counts, tmin, n_iter=10000, n_warmup=5000, chains=2, seed=0,
+            names=None, workers=None):
+    """{name: (posterior-mean theta, draws)} for each distribution.
+
+    Chains start at the MAP so the warmup only has to tune the proposal. Every
+    (distribution, chain) pair is independent, so they all run in parallel.
+    """
+    names = list(names or DISTS)
+    x0s = pmap(_map_start, [(n, counts, tmin) for n in names], workers)
+    draws = pmap(_chain, [(n, counts, tmin, x0, c, n_iter, n_warmup, seed)
+                          for n, x0 in zip(names, x0s) for c in range(chains)], workers)
+    out = {}
+    for i, n in enumerate(names):
+        d = np.vstack(draws[i * chains:(i + 1) * chains])
+        out[n] = (d.mean(axis=0), d)  # paper: parameter = mean of post-warmup draws
+    return out

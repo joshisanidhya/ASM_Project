@@ -1,8 +1,17 @@
-"""Fit the proposed + baseline headway distributions on one dataset.
+"""Fit the proposed + baseline headway distributions (Leungbootnak et al.).
 
-    uv run python run.py --dataset ngsim --csv data/raw/ngsim.csv --location i-80
+    uv run python run.py                       # every dataset found under data/
+    uv run python run.py --dataset highd       # one dataset from data/highd
+    uv run python run.py --dataset lyft --path D:\\somewhere\\train.zarr
 
-Writes outputs/<dataset>/{params,tests,metrics}.csv (paper Tables 3-5) and fit.png (Figure 5).
+Expected layout (any dataset that is missing is skipped):
+    data/ngsim/<export>.csv     NGSIM Data.gov export
+    data/highd/NN_tracks.csv    highD recordings (+ NN_recordingMeta.csv)
+    data/lyft/<name>.zarr       Lyft Level 5 Prediction zarr folder
+
+Writes, per dataset, outputs/<dataset>/{params,tests,metrics}.csv + fit.png
+(paper Tables 3-5, Figure 5) and, across datasets, outputs/all_results.csv.
+Uses every core by default (--workers 1 to run serially).
 """
 import argparse
 from pathlib import Path
@@ -12,41 +21,83 @@ import pandas as pd
 
 from headway.datasets import LOADERS
 from headway.distributions import DISTS, EDGES
-from headway.fit import fit
-from headway.metrics import evaluate
-from headway.plots import plot_fits
+from headway.fit import fit_all
+
+
+def find_path(dataset, root):
+    """Locate a dataset's files under root/<dataset>; None if absent."""
+    d = Path(root) / dataset
+    if dataset == "ngsim":
+        hits = sorted(d.glob("*.csv"), key=lambda p: -p.stat().st_size)  # biggest csv = the export
+        return hits[0] if hits else None
+    if dataset == "lyft":
+        return next(iter(sorted(d.glob("*.zarr"))), None)
+    return d if any(d.glob("*_tracks.csv")) else None
+
+
+def run_dataset(name, path, a):
+    # Imported here, not at the top: spawned workers re-import this file, and
+    # matplotlib / scipy.stats would add seconds to every worker's start-up.
+    from headway.metrics import evaluate
+    from headway.plots import plot_fits
+
+    kw = {"location": a.location} if name == "ngsim" and a.location else {}
+    data = LOADERS[name](path, workers=a.workers, **kw)
+    if len(data) == 0:
+        raise SystemExit(f"{name}: no headways found in {path} (wrong --location?)")
+    counts = np.histogram(data, bins=EDGES)[0].astype(float)
+    print(f"\n{name}: {len(data):,} headways, mean {data.mean():.2f}s  ({path})")
+
+    fits = fit_all(counts, data.min(), n_iter=a.iters, n_warmup=a.iters // 2, workers=a.workers)
+    params, rows = {}, []
+    for dname, (theta, _) in fits.items():
+        params[dname] = theta
+        rows.append({"distribution": dname, **dict(zip(DISTS[dname].params, theta)),
+                     **evaluate(DISTS[dname], theta, data, counts)})
+        print(f"  {dname:22s} KL={rows[-1]['kl']:.4f}  W={rows[-1]['wasserstein']:.4f}")
+
+    res = pd.DataFrame(rows).set_index("distribution")
+    stats = ["ks_D", "ks_p", "chi2", "chi2_dof", "chi2_p", "kl", "wasserstein"]
+    out = Path(a.out) / name
+    out.mkdir(parents=True, exist_ok=True)
+    res.drop(columns=stats).to_csv(out / "params.csv")
+    res[["ks_D", "ks_p", "chi2", "chi2_dof", "chi2_p"]].to_csv(out / "tests.csv")
+    res[["kl", "wasserstein"]].to_csv(out / "metrics.csv")
+    plot_fits(name, counts, params, out / "fit.png")
+    print(f"  wrote {out}/")
+    return res.assign(dataset=name, n_headways=len(data)).reset_index()
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--dataset", choices=LOADERS, default="ngsim")
-    ap.add_argument("--csv", required=True)
-    ap.add_argument("--location", help="NGSIM Location filter, e.g. i-80")
+    ap.add_argument("--dataset", choices=[*LOADERS, "all"], default="all")
+    ap.add_argument("--data-dir", default="data", help="root holding ngsim/, highd/, lyft/")
+    ap.add_argument("--path", help="explicit path, overrides --data-dir (single dataset only)")
+    ap.add_argument("--location", default="i-80", help="NGSIM only: Location to keep (paper: i-80)")
     ap.add_argument("--iters", type=int, default=10000)
+    ap.add_argument("--workers", type=int, default=None, help="default: all cores")
     ap.add_argument("--out", default="outputs")
     a = ap.parse_args()
 
-    kw = {"location": a.location} if a.location else {}
-    data = LOADERS[a.dataset](a.csv, **kw)
-    counts = np.histogram(data, bins=EDGES)[0].astype(float)
-    print(f"{a.dataset}: {len(data):,} headways, mean {data.mean():.2f}s")
+    names = list(LOADERS) if a.dataset == "all" else [a.dataset]
+    if a.path and len(names) != 1:
+        ap.error("--path needs a single --dataset")
 
-    params, rows = {}, []
-    for name, dist in DISTS.items():
-        theta, _ = fit(dist, counts, data.min(), n_iter=a.iters, n_warmup=a.iters // 2)
-        params[name] = theta
-        rows.append({"distribution": name, **dict(zip(dist.params, theta)),
-                     **evaluate(dist, theta, data, counts)})
-        print(f"  {name:22s} KL={rows[-1]['kl']:.4f}  W={rows[-1]['wasserstein']:.4f}")
+    results = []
+    for n in names:
+        path = a.path or find_path(n, a.data_dir)
+        if path is None:
+            print(f"\n{n}: nothing under {Path(a.data_dir) / n}, skipped")
+            continue
+        results.append(run_dataset(n, path, a))
+    if not results:
+        raise SystemExit(f"no datasets found under {a.data_dir}/")
 
-    res = pd.DataFrame(rows).set_index("distribution")
-    out = Path(a.out) / a.dataset
-    out.mkdir(parents=True, exist_ok=True)
-    res[[c for c in res if c not in {"ks_D", "ks_p", "chi2", "chi2_dof", "chi2_p", "kl", "wasserstein"}]].to_csv(out / "params.csv")
-    res[["ks_D", "ks_p", "chi2", "chi2_dof", "chi2_p"]].to_csv(out / "tests.csv")
-    res[["kl", "wasserstein"]].to_csv(out / "metrics.csv")
-    plot_fits(a.dataset, counts, params, out / "fit.png")
-    print(f"wrote {out}/")
+    allres = pd.concat(results, ignore_index=True)
+    first = ["dataset", "distribution", "n_headways"]
+    Path(a.out).mkdir(exist_ok=True)
+    allres[first + [c for c in allres if c not in first]].to_csv(Path(a.out) / "all_results.csv", index=False)
+    print(f"\nwrote {Path(a.out) / 'all_results.csv'}")
 
 
 if __name__ == "__main__":

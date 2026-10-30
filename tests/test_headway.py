@@ -2,7 +2,7 @@ import numpy as np
 from scipy.integrate import quad
 
 from headway.distributions import ALPHA, DISTS, EDGES, T_MAX
-from headway.fit import fit
+from headway.fit import fit_all
 
 P = DISTS["Proposed"]
 
@@ -34,5 +34,17 @@ def test_mcmc_recovers_proposed_parameters():
     rng = np.random.default_rng(1)
     data = np.interp(rng.random(100_000), cdf, grid)
     counts = np.histogram(data, bins=EDGES)[0].astype(float)
-    theta, _ = fit(P, counts, data.min(), n_iter=3000, n_warmup=1500)
+    theta, _ = fit_all(counts, data.min(), n_iter=3000, n_warmup=1500,
+                       names=["Proposed"], workers=1)["Proposed"]
     assert abs(theta[0] - a) < 0.1 and abs(theta[1] - b) < 0.02, theta
+
+
+def test_parallel_fit_matches_serial():
+    # same seeds per (distribution, chain) -> identical regardless of worker count
+    rng = np.random.default_rng(2)
+    data = np.clip(rng.gamma(2.5, 1.2, 50_000), ALPHA, T_MAX)
+    counts = np.histogram(data, bins=EDGES)[0].astype(float)
+    kw = dict(n_iter=600, n_warmup=300, names=["Proposed", "Gamma"])
+    ser, par = fit_all(counts, data.min(), workers=1, **kw), fit_all(counts, data.min(), workers=2, **kw)
+    for n in kw["names"]:
+        assert np.allclose(ser[n][0], par[n][0])

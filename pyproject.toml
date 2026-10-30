@@ -3,7 +3,7 @@ name = "headway"
 version = "0.1.0"
 description = "Headway distribution b^|t-a| (Leungbootnak et al.) fitted via MCMC and compared with six baselines"
 requires-python = ">=3.11"
-dependencies = ["numpy", "pandas", "scipy", "matplotlib"]
+dependencies = ["numpy", "pandas", "scipy", "matplotlib", "zarr<3"]  # zarr<3: Lyft files are zarr v2
 
 [dependency-groups]
 dev = ["pytest"]
