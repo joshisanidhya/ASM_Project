@@ -1,4 +1,6 @@
+"""Core tests for headway distribution mathematics, normalization, and MCMC."""
 import numpy as np
+import pytest
 from scipy.integrate import quad
 
 from headway.distributions import ALPHA, DISTS, EDGES, T_MAX
@@ -27,6 +29,38 @@ def test_eq2_case1_literal():
     assert abs(paper - ours) < 1e-9
 
 
+def test_all_seven_distributions_integrate_to_one():
+    test_params = {
+        "Proposed": (2.0, 0.5),
+        "Shifted Log-normal": (0.5, 0.8, 0.2),
+        "Weibull": (1.5, 2.5),
+        "Log-logistic": (2.5, 1.8),
+        "Gamma": (2.0, 1.0),
+        "Burr": (3.0, 1.0, 1.5),
+        "Shifted Exponential": (0.5, 0.4),
+    }
+    for name, theta in test_params.items():
+        dist = DISTS[name]
+        # Test truncated PDF integrates to 1.0 on [ALPHA, T_MAX]
+        val, _ = quad(lambda t: dist.trunc_pdf(np.array([t]), theta)[0], ALPHA, T_MAX)
+        assert abs(val - 1.0) < 1e-4, f"{name} truncated PDF integral is {val}, expected 1.0"
+
+        # Test bin probabilities sum to 1.0
+        p = dist.bin_probs(theta)
+        assert len(p) == 49
+        assert abs(p.sum() - 1.0) < 1e-6, f"{name} bin probs sum is {p.sum()}, expected 1.0"
+
+
+def test_derivative_of_cdf_matches_pdf():
+    dist = DISTS["Proposed"]
+    theta = (2.2, 0.54)
+    eps = 1e-5
+    for t_val in [0.8, 1.5, 2.2, 3.5, 10.0]:
+        num_deriv = (dist.cdf(np.array([t_val + eps]), *theta)[0] - dist.cdf(np.array([t_val - eps]), *theta)[0]) / (2 * eps)
+        exact_pdf = dist.pdf(np.array([t_val]), *theta)[0]
+        assert abs(num_deriv - exact_pdf) < 1e-3, f"Mismatch at t={t_val}: deriv={num_deriv}, pdf={exact_pdf}"
+
+
 def test_mcmc_recovers_proposed_parameters():
     a, b = 2.5, 0.55
     grid = np.linspace(ALPHA, T_MAX, 20001)
@@ -40,7 +74,6 @@ def test_mcmc_recovers_proposed_parameters():
 
 
 def test_parallel_fit_matches_serial():
-    # same seeds per (distribution, chain) -> identical regardless of worker count
     rng = np.random.default_rng(2)
     data = np.clip(rng.gamma(2.5, 1.2, 50_000), ALPHA, T_MAX)
     counts = np.histogram(data, bins=EDGES)[0].astype(float)
