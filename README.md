@@ -222,6 +222,7 @@ python -m pytest -v
 ## 8. Research Documentation & Deliverables
 
 Detailed scientific documentation is provided in `docs/`:
+* [docs/POST_KAUSTABH_COMMIT_IMPLEMENTATION_REPORT.md](docs/POST_KAUSTABH_COMMIT_IMPLEMENTATION_REPORT.md): Comprehensive report documenting all development work, bug fixes, algorithmic extensions, and statistical rectifications after Kaustabh's baseline commit.
 * [docs/ADDITIONAL_INSTRUCTIONS_IMPLEMENTATION_CHECKLIST.md](docs/ADDITIONAL_INSTRUCTIONS_IMPLEMENTATION_CHECKLIST.md): Requirements matrix mapping every instruction from `ASM Project 2026M_instructions.pdf`.
 * [docs/ASM_PROJECT_REPORT.md](docs/ASM_PROJECT_REPORT.md): Complete 10–12 page academic report draft covering all 18 required report sections.
 * [docs/PRESENTATION_SLIDES_GUIDE.md](docs/PRESENTATION_SLIDES_GUIDE.md): 15-minute presentation guide with slide-by-slide script, timing, and terminal demonstration commands.
