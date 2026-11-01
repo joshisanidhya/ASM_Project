@@ -40,35 +40,49 @@ $$\int_\alpha^\infty b^{t - a} dt = \left[ \frac{b^{t - a}}{\ln b} \right]_\alph
 
 ### 1.3 Normalized Probability Density Function (PDF)
 Dividing $g(t)$ by $I$ yields the normalized PDF:
-$$f(t \mid a, b) = \begin{cases}
-\dfrac{\ln b \cdot b^{|t - a|}}{b^{a - \alpha} - 2}, & t \ge \alpha, \ a > \alpha \\[10pt]
--\ln b \cdot b^{t - \alpha}, & t \ge \alpha, \ a \le \alpha \\[10pt]
+
+$$
+f(t \mid a, b) = \begin{cases}
+\dfrac{\ln b \cdot b^{|t - a|}}{b^{a - \alpha} - 2}, & t \ge \alpha, \ a > \alpha \\
+-\ln b \cdot b^{t - \alpha}, & t \ge \alpha, \ a \le \alpha \\
 0, & t < \alpha
-\end{cases}$$
+\end{cases}
+$$
+
 Note that because $\ln b < 0$ and $b^{a - \alpha} - 2 < 0$, the ratio is strictly positive.
 
 ### 1.4 Analytical Cumulative Distribution Function (CDF)
-The CDF $F(t) = \int_\alpha^t f(s \mid a, b) ds$ on $[\alpha, \infty)$ is piecewise:
-* **For $a > \alpha$**:
-  $$F(t) = \begin{cases}
-  0, & t < \alpha \\[6pt]
-  \dfrac{b^{a - \alpha} - b^{a - t}}{b^{a - \alpha} - 2}, & \alpha \le t \le a \\[10pt]
-  \dfrac{b^{a - \alpha} + b^{t - a} - 2}{b^{a - \alpha} - 2}, & t > a
-  \end{cases}$$
-* **For $a \le \alpha$**:
-  $$F(t) = \begin{cases}
-  0, & t < \alpha \\[6pt]
-  1 - b^{t - \alpha}, & t \ge \alpha
-  \end{cases}$$
+The CDF $F(t) = \int_\alpha^t f(s \mid a, b)\,ds$ on $[\alpha, \infty)$ is piecewise:
+- **For $a > \alpha$**:
+
+$$
+F(t) = \begin{cases}
+0, & t < \alpha \\
+\dfrac{b^{a - \alpha} - b^{a - t}}{b^{a - \alpha} - 2}, & \alpha \le t \le a \\
+\dfrac{b^{a - \alpha} + b^{t - a} - 2}{b^{a - \alpha} - 2}, & t > a
+\end{cases}
+$$
+
+- **For $a \le \alpha$**:
+
+$$
+F(t) = \begin{cases}
+0, & t < \alpha \\
+1 - b^{t - \alpha}, & t \ge \alpha
+\end{cases}
+$$
 
 ### 1.5 Closed-Form Interval Probability (Paper Equation 2)
 For interval probabilities $P(t_1 \le h \le t_2) = F(t_2) - F(t_1)$ with $\alpha \le t_1 < t_2$:
-$$P(t_1 \le h \le t_2) = \begin{cases}
-\dfrac{b^{a - t_1} + b^{t_2 - a} - 2}{b^{a - \alpha} - 2}, & \alpha \le t_1 < a < t_2 \\[10pt]
-\dfrac{b^{a - t_1} - b^{a - t_2}}{b^{a - \alpha} - 2}, & \alpha \le t_1 < t_2 \le a \\[10pt]
-\dfrac{b^{t_2 - a} - b^{t_1 - a}}{b^{a - \alpha} - 2}, & \alpha \le a \le t_1 < t_2 \\[10pt]
+
+$$
+P(t_1 \le h \le t_2) = \begin{cases}
+\dfrac{b^{a - t_1} + b^{t_2 - a} - 2}{b^{a - \alpha} - 2}, & \alpha \le t_1 < a < t_2 \\
+\dfrac{b^{a - t_1} - b^{a - t_2}}{b^{a - \alpha} - 2}, & \alpha \le t_1 < t_2 \le a \\
+\dfrac{b^{t_2 - a} - b^{t_1 - a}}{b^{a - \alpha} - 2}, & \alpha \le a \le t_1 < t_2 \\
 \dfrac{b^{t_2 - a} - b^{t_1 - a}}{-b^{\alpha - a}}, & a < \alpha \le t_1 < t_2
-\end{cases}$$
+\end{cases}
+$$
 
 ### 1.6 Conditioning on Observed Truncation Window $[\alpha, T_{max}]$
 Since data filtering removes headways $> T_{max} = 25.0$ s, empirical distributions are supported on $[\alpha, T_{max}] = [0.5, 25.0]$ s. The truncated conditional CDF is:

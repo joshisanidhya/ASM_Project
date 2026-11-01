@@ -55,28 +55,55 @@ where:
 
 #### Normalization Constant
 The normalization integral over $[\alpha, \infty)$ is derived as:
-$$\int_\alpha^\infty b^{|t-a|} dt = \begin{cases} \dfrac{b^{a-\alpha} - 2}{\ln b}, & a > \alpha \\[10pt] \dfrac{-b^{\alpha-a}}{\ln b}, & a \le \alpha \end{cases}$$
+
+$$
+\int_\alpha^\infty b^{|t-a|}\,dt = \begin{cases}
+\dfrac{b^{a-\alpha} - 2}{\ln b}, & a > \alpha \\
+\dfrac{-b^{\alpha-a}}{\ln b}, & a \le \alpha
+\end{cases}
+$$
+
 Since $0 < b < 1$, $\ln b < 0$. Furthermore, when $a > \alpha$, $0 < b^{a-\alpha} < 1$, so $b^{a-\alpha} - 2 < 0$. Thus, the integral is strictly positive.
 
 The normalized PDF on $[\alpha, \infty)$ is:
-$$f(t \mid a, b) = \frac{b^{|t-a|}}{\int_\alpha^\infty b^{|s-a|} ds} = \begin{cases} \dfrac{\ln b \cdot b^{|t-a|}}{b^{a-\alpha} - 2}, & a > \alpha \\[10pt] -\ln b \cdot b^{t-\alpha}, & a \le \alpha \end{cases} \quad (t \ge \alpha)$$
+
+$$
+f(t \mid a, b) = \frac{b^{|t-a|}}{\int_\alpha^\infty b^{|s-a|}\,ds} = \begin{cases}
+\dfrac{\ln b \cdot b^{|t-a|}}{b^{a-\alpha} - 2}, & a > \alpha \\
+-\ln b \cdot b^{t-\alpha}, & a \le \alpha
+\end{cases} \quad (t \ge \alpha)
+$$
 
 #### Cumulative Distribution Function (CDF)
 For $t \ge \alpha$:
-* **Case 1: $a > \alpha$**:
-  $$F(t) = \begin{cases} \dfrac{b^{a-\alpha} - b^{a-t}}{b^{a-\alpha} - 2}, & \alpha \le t \le a \\[10pt] \dfrac{b^{a-\alpha} + b^{t-a} - 2}{b^{a-\alpha} - 2}, & t > a \end{cases}$$
-* **Case 2: $a \le \alpha$**:
-  $$F(t) = 1 - b^{t-\alpha}, \quad t \ge \alpha$$
+- **Case 1: $a > \alpha$**:
+
+$$
+F(t) = \begin{cases}
+\dfrac{b^{a-\alpha} - b^{a-t}}{b^{a-\alpha} - 2}, & \alpha \le t \le a \\
+\dfrac{b^{a-\alpha} + b^{t-a} - 2}{b^{a-\alpha} - 2}, & t > a
+\end{cases}
+$$
+
+- **Case 2: $a \le \alpha$**:
+
+$$
+F(t) = 1 - b^{t-\alpha}, \quad t \ge \alpha
+$$
+
 For $t < \alpha$, $F(t) = 0$.
 
 #### Interval Probability Formula (Paper Equation 2)
 For $\alpha \le t_1 < t_2$:
-$$P(t_1 \le h \le t_2) = \begin{cases}
-\dfrac{b^{a-t_1} + b^{t_2-a} - 2}{b^{a-\alpha} - 2}, & \alpha \le t_1 < a < t_2 \\[10pt]
-\dfrac{b^{a-t_1} - b^{a-t_2}}{b^{a-\alpha} - 2}, & \alpha \le t_1 < t_2 \le a \\[10pt]
-\dfrac{b^{t_2-a} - b^{t_1-a}}{b^{a-\alpha} - 2}, & \alpha \le a \le t_1 < t_2 \\[10pt]
+
+$$
+P(t_1 \le h \le t_2) = \begin{cases}
+\dfrac{b^{a-t_1} + b^{t_2-a} - 2}{b^{a-\alpha} - 2}, & \alpha \le t_1 < a < t_2 \\
+\dfrac{b^{a-t_1} - b^{a-t_2}}{b^{a-\alpha} - 2}, & \alpha \le t_1 < t_2 \le a \\
+\dfrac{b^{t_2-a} - b^{t_1-a}}{b^{a-\alpha} - 2}, & \alpha \le a \le t_1 < t_2 \\
 \dfrac{b^{t_2-a} - b^{t_1-a}}{-b^{\alpha-a}}, & a < \alpha \le t_1 < t_2
-\end{cases}$$
+\end{cases}
+$$
 
 ### 3.2 Six Baseline Distributions (Paper Table 1)
 All candidate distributions are defined with support $t > 0$ or $t > \gamma$:

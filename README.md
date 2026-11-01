@@ -7,7 +7,7 @@
 
 A reproducible, university-grade scientific implementation and research extension of the traffic headway modeling paper:
 
-> **Reference**: Leungbootnak, Natchaphon. *Modeling Headway in Heterogeneous and Mixed Traffic Flow: A Statistical Distribution Based on a General Exponential Function.* Texas A&M University (2024).
+> **Reference**: Leungbootnak, Natchaphon. *Modeling Headway in Heterogeneous and Mixed Traffic Flow: A Statistical Distribution Based on a General Exponential Function.* Texas A&M University (2021).
 
 ---
 
@@ -18,7 +18,7 @@ Time headway—the elapsed time between successive vehicles in a traffic lane pa
 In mixed traffic environments where human-driven vehicles (HDVs) interact with autonomous vehicles (AVs), conventional parametric headway distributions (e.g., Log-normal, Weibull, Shifted Exponential) often struggle to capture both the sharp central modal clustering of tight highway car-following and the elongated, dispersed tails of urban stop-and-go maneuvers.
 
 This project implements:
-1. **The Proposed General Exponential Distribution**: $g(t) = b^{|t - a|}$, normalized on $[\alpha, \infty)$ with $\alpha = 0.5$ s.
+1. **The Proposed General Exponential Distribution**: $g(t) = b^{|t - a|}$, normalized on $[\alpha, \infty)$ with $\alpha = 0.5\text{ s}$.
 2. **Six Classical Baseline Distributions**: Shifted Log-normal, Weibull, Log-logistic, Gamma, Burr Type XII, Shifted Exponential.
 3. **MCMC Parameter Estimation**: 2 independent chains $\times$ 10,000 iterations (5,000 warmup, 5,000 retained posterior draws).
 4. **Three Empirical Car-Following Datasets**:
@@ -36,19 +36,45 @@ This project implements:
 
 ## 2. Mathematical Model
 
-### The Proposed Distribution
-$$f(t \mid a, b) = \frac{b^{|t - a|}}{\int_\alpha^\infty b^{|s - a|} ds}, \quad 0 < b < 1, \quad a \in \mathbb{R}, \quad t \ge \alpha = 0.5\text{ s}$$
-* **Modal Location $a$**: Central tendency aligning with the most frequent headway.
-* **Dispersion Parameter $b$**: Degree of concentration around the mode ($0 < b < 1$).
-* **Normalization Constant**:
-  $$\int_\alpha^\infty b^{|t - a|} dt = \begin{cases} \dfrac{b^{a - \alpha} - 2}{\ln b}, & a > \alpha \\[8pt] \dfrac{-b^{\alpha - a}}{\ln b}, & a \le \alpha \end{cases}$$
-* **Analytical CDF**:
-  $$F(t) = \begin{cases}
-  \dfrac{b^{a - \alpha} - b^{a - t}}{b^{a - \alpha} - 2}, & \alpha \le t \le a \\[10pt]
-  \dfrac{b^{a - \alpha} + b^{t - a} - 2}{b^{a - \alpha} - 2}, & t > a
-  \end{cases} \quad (a > \alpha)$$
+### The Proposed General Exponential Distribution
 
-For complete mathematical derivations, baseline equations, and priors, see [docs/MATHEMATICAL_MODEL.md](docs/MATHEMATICAL_MODEL.md).
+The probability density function (PDF) based on the general exponential kernel $g(t) = b^{|t - a|}$ is defined on $[\alpha, \infty)$ with physical threshold $\alpha = 0.5\text{ s}$:
+
+$$
+f(t \mid a, b) = \frac{b^{|t - a|}}{\int_\alpha^\infty b^{|s - a|}\,ds}, \quad 0 < b < 1, \quad a \ge \alpha, \quad t \ge \alpha
+$$
+
+#### Model Parameters
+- **Modal Location $a$**: Central tendency parameter representing the peak / most frequent time headway ($a \ge 0.5\text{ s}$).
+- **Dispersion Parameter $b$**: Concentration parameter controlling the rate of decay away from the mode ($0 < b < 1$).
+- **Physical Threshold $\alpha$**: Minimum physical following threshold ($\alpha = 0.5\text{ s}$).
+
+#### Normalization Constant
+
+The closed-form normalization constant $I = \int_\alpha^\infty b^{|t - a|}\,dt$ guarantees that the total area integrates to 1:
+
+$$
+I = \int_\alpha^\infty b^{|t - a|}\,dt = \begin{cases}
+\dfrac{b^{a - \alpha} - 2}{\ln b}, & a > \alpha \\
+\dfrac{-b^{\alpha - a}}{\ln b}, & a \le \alpha
+\end{cases}
+$$
+
+*(Note: Because $0 < b < 1$, we have $\ln b < 0$ and $b^{a - \alpha} - 2 < 0$, ensuring $I > 0$ strictly.)*
+
+#### Analytical Cumulative Distribution Function (CDF)
+
+For the realistic traffic regime where $a > \alpha$:
+
+$$
+F(t) = \begin{cases}
+0, & t < \alpha \\
+\dfrac{b^{a - \alpha} - b^{a - t}}{b^{a - \alpha} - 2}, & \alpha \le t \le a \\
+\dfrac{b^{a - \alpha} + b^{t - a} - 2}{b^{a - \alpha} - 2}, & t > a
+\end{cases}
+$$
+
+For complete mathematical derivations, baseline equations, priors, and proofs, see [docs/MATHEMATICAL_MODEL.md](docs/MATHEMATICAL_MODEL.md).
 
 ---
 
