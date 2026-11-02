@@ -392,3 +392,76 @@ def plot_markov_state_probabilities_vs_time(
     fig.savefig(path, dpi=200, bbox_inches="tight")
     plt.close(fig)
 
+
+def plot_markov_state_diagram(
+    P: np.ndarray,
+    regime_names: Sequence[str],
+    title: str,
+    path: Union[str, Path],
+) -> None:
+    """State-transition diagram: nodes show the self-transition probability, arrows the others.
+
+    Arrow width grows with the probability; transitions below 0.005 are omitted.
+    """
+    colors = ["#D62728", "#1F77B4", "#2CA02C"]
+    pos = np.array([[-1.0, -0.6], [1.0, -0.6], [0.0, 1.0]])
+    fig, ax = plt.subplots(figsize=(7, 6))
+    ax.set_xlim(-1.8, 1.8)
+    ax.set_ylim(-1.4, 1.7)
+    ax.set_aspect("equal")
+    ax.axis("off")
+    for i, name in enumerate(regime_names):
+        ax.add_patch(plt.Circle(pos[i], 0.36, color=colors[i], alpha=0.25, ec=colors[i], lw=2))
+        ax.text(pos[i, 0], pos[i, 1] + 0.06, name, ha="center", fontsize=9, fontweight="bold")
+        ax.text(pos[i, 0], pos[i, 1] - 0.12, f"stay {P[i, i]:.3f}", ha="center", fontsize=9)
+    rad = 0.28
+    for i in range(3):
+        for j in range(3):
+            if i == j or P[i, j] < 0.005:
+                continue
+            ax.annotate("", xy=pos[j], xytext=pos[i], arrowprops=dict(
+                arrowstyle="-|>", lw=0.8 + 7 * P[i, j], color="0.35", shrinkA=34, shrinkB=34,
+                connectionstyle=f"arc3,rad={rad}"))
+            d = pos[j] - pos[i]
+            bend = np.array([d[1], -d[0]])  # matplotlib's arc3 control-point direction
+            label = (pos[i] + pos[j]) / 2 + 0.5 * rad * bend + 0.09 * bend / np.linalg.norm(bend)
+            ax.text(label[0], label[1], f"{P[i, j]:.3f}", ha="center", va="center", fontsize=9,
+                    bbox=dict(boxstyle="round,pad=0.15", fc="white", ec="none", alpha=0.85))
+    ax.set_title(f"{title} — Regime Markov Chain: State-Transition Diagram", fontsize=12, fontweight="bold")
+    fig.tight_layout()
+    Path(path).parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(path, dpi=200, bbox_inches="tight")
+    plt.close(fig)
+
+
+def plot_event_count_distribution(
+    counts: np.ndarray,
+    t: float,
+    mean_theory: float,
+    var_theory: float,
+    rate: float,
+    title: str,
+    path: Union[str, Path],
+) -> None:
+    """Distribution of N(t): simulated renewal paths vs the renewal-theory normal and a Poisson process."""
+    from scipy.stats import norm, poisson
+
+    k = np.arange(counts.min() - 3, counts.max() + 4)
+    sd = np.sqrt(var_theory)
+    fig, ax = plt.subplots(figsize=(9, 5))
+    ax.bar(k, np.bincount(counts - k[0], minlength=len(k))[:len(k)] / len(counts), width=0.85,
+           color="#BBBBBB", edgecolor="#777777", label=f"Simulated renewal paths (n={len(counts):,})")
+    ax.plot(k, norm.cdf((k + 0.5 - mean_theory) / sd) - norm.cdf((k - 0.5 - mean_theory) / sd),
+            color="#D62728", lw=2.2, marker="o", ms=4, label="Renewal theory: Normal(m(t), σ²t/μ³)")
+    ax.plot(k, poisson.pmf(k, rate * t), color="#1F77B4", lw=1.8, ls="--", marker="s", ms=3,
+            label=f"Poisson process, same rate (mean {rate * t:.1f})")
+    ax.set_title(f"{title} — Event-count distribution of N(t) at t = {t:g} s", fontsize=12, fontweight="bold")
+    ax.set_xlabel(f"Vehicles arriving in {t:g} s")
+    ax.set_ylabel("Probability")
+    ax.grid(True, linestyle=":", alpha=0.5)
+    ax.legend(fontsize=9)
+    fig.tight_layout()
+    Path(path).parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(path, dpi=200, bbox_inches="tight")
+    plt.close(fig)
+

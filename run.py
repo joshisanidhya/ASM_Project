@@ -29,27 +29,7 @@ from headway.simulation import (
     validate_simulated_against_theoretical,
 )
 
-# Reference parameter values from Paper Table 3 (for synthetic generation when raw files absent)
-PAPER_TABLE3_PARAMS = {
-    "highd": {
-        "Proposed": (0.936, 0.540),
-        "Shifted Log-normal": (0.233, 0.899, 0.377),
-        "Weibull": (1.481, 2.473),
-        "Log-logistic": (2.574, 1.719),
-        "Gamma": (2.335, 1.055),
-        "Burr": (3.199, 0.602, 1.296),
-        "Shifted Exponential": (0.584, 0.500),
-    },
-    "ngsim": {
-        "Proposed": (2.277, 0.481),
-        "Shifted Log-normal": (0.683, 0.594, 0.528),
-        "Weibull": (1.744, 3.305),
-        "Log-logistic": (3.910, 2.515),
-        "Gamma": (4.175, 1.428),
-        "Burr": (5.237, 0.524, 2.021),
-        "Shifted Exponential": (0.423, 0.558),
-    },
-}
+from headway.paper_reference import PAPER_TABLE3_PARAMS  # paper Table 3, used for the synthetic fallback
 
 
 def find_dataset_path(dataset: str, root: Union[str, Path]) -> Optional[Path]:
@@ -112,6 +92,15 @@ def run_dataset_pipeline(name: str, path: Optional[Path], args: argparse.Namespa
     print(f"\n=======================================================")
     print(f" Dataset: {name.upper()} | Samples: {len(data):,} | Mean: {data.mean():.2f}s | Source: {source_desc}")
     print(f"=======================================================")
+    # The report generator refuses synthetic data, so record where this run's data came from.
+    pd.DataFrame([{
+        "dataset": name, "source": "raw" if path is not None else "synthetic",
+        "n_headways": len(data), "mean_s": data.mean(), "median_s": np.median(data),
+        "std_s": data.std(ddof=1), "min_s": data.min(), "max_s": data.max(),
+        "ngsim_location": args.location if name == "ngsim" else "",
+        "ngsim_period": (args.period or "all") if name == "ngsim" else "",
+        "ngsim_lanes": ("all" if not args.lanes else ",".join(map(str, args.lanes))) if name == "ngsim" else "",
+    }]).to_csv(out_dir / "dataset_info.csv", index=False)
 
     # 2. Parameter Estimation: MCMC
     print(f"[{name}] Running MCMC (2 chains x {args.iters:,} iters, {args.warmup:,} warmup)...")
@@ -262,6 +251,29 @@ def run_dataset_pipeline(name: str, path: Optional[Path], args: argparse.Namespa
 
     print(f"[{name}] Markov stationary distribution: Close={mc_results.stationary_distribution[0]:.3f}, Platoon={mc_results.stationary_distribution[1]:.3f}, Free={mc_results.stationary_distribution[2]:.3f}")
     print(f"[{name}] Arrival renewal rate: {rp_results.asymptotic_rate:.4f} veh/s ({rp_results.hourly_flow_rate:.0f} veh/h/lane)")
+
+    # 6b. Quantitative validation of the stochastic models (course brief, section 6)
+    from headway.plots import plot_event_count_distribution, plot_markov_state_diagram
+    from headway.validation import independence_check, markov_validation, renewal_validation
+
+    times = (30, 60, 120, 300)
+    renewal_df, sim_counts = renewal_validation(data, times=times, seed=args.seed)
+    renewal_df.to_csv(out_dir / "validation_renewal.csv", index=False)
+    independence_check(data).to_csv(out_dir / "validation_independence.csv", index=False)
+    mv = markov_validation(data, seed=args.seed)
+    pd.DataFrame([mv]).to_csv(out_dir / "validation_markov.csv", index=False)
+
+    j = times.index(60)
+    r60 = renewal_df.iloc[j]
+    plot_event_count_distribution(sim_counts[:, j], 60, r60.mean_theory, r60.var_theory,
+                                  rp_results.asymptotic_rate, name.upper(), fig_dir / "event_count_distribution.png")
+    plot_markov_state_diagram(mc_results.transition_matrix, REGIME_NAMES, name.upper(),
+                              fig_dir / "markov_state_diagram.png")
+    print(f"[{name}] Renewal check at t=300s: E[N] sim/theory = {renewal_df.mean_sim.iloc[-1]:.2f}/"
+          f"{renewal_df.mean_theory.iloc[-1]:.2f}, Var[N] sim/theory = {renewal_df.var_sim.iloc[-1]:.2f}/"
+          f"{renewal_df.var_theory.iloc[-1]:.2f}; Poisson would give Var = {renewal_df.var_poisson.iloc[-1]:.2f}")
+    print(f"[{name}] Markov check: Chapman-Kolmogorov(2-step) max err = {mv['chapman_kolmogorov_2_max_err']:.4f}, "
+          f"2nd-order test p = {mv['second_order_p']:.3g} (effect TV = {mv['second_order_effect_tv']:.3f})")
 
     # 7. Save Publication Figures
     plot_fitted_distributions(f"{name.upper()} — Fitted Headway Distributions", counts, mcmc_params, fig_dir / "fitted_distributions.png")
