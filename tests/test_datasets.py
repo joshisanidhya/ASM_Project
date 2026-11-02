@@ -59,6 +59,44 @@ def test_lyft_zarr_roundtrip(tmp_path):
         assert len(h) == 4 and np.allclose(h, want), h
 
 
+def test_lyft_folder_of_stores_with_several_scenes(tmp_path):
+    """Two scenes per store, two stores in a folder; sample.zarr is skipped when others exist."""
+    zarr = __import__("pytest").importorskip("zarr")
+    T = 31
+
+    def write_store(path, speeds):  # one scene per speed [m/s]; a leader 30 m ahead, same speed
+        n = len(speeds)
+        scenes = np.zeros(n, [("frame_index_interval", "<i8", (2,)), ("host", "<U16"),
+                              ("start_time", "<i8"), ("end_time", "<i8")])
+        fr = np.zeros(n * T, [("timestamp", "<i8"), ("agent_index_interval", "<i8", (2,)),
+                              ("traffic_light_faces_index_interval", "<i8", (2,)),
+                              ("ego_translation", "<f8", (3,)), ("ego_rotation", "<f8", (3, 3))])
+        ag = np.zeros(n * T, [("centroid", "<f8", (2,)), ("extent", "<f4", (3,)), ("yaw", "<f4"),
+                              ("velocity", "<f4", (2,)), ("track_id", "<u8"),
+                              ("label_probabilities", "<f4", (17,))])
+        for i, v in enumerate(speeds):
+            k, sl = np.arange(T), slice(i * T, (i + 1) * T)
+            scenes["frame_index_interval"][i] = [i * T, (i + 1) * T]
+            fr["timestamp"][sl] = k * 100_000_000
+            fr["agent_index_interval"][sl] = np.stack([i * T + k, i * T + k + 1], 1)
+            fr["ego_translation"][sl, 0] = v * k / 10
+            fr["ego_rotation"][sl] = np.eye(3)
+            ag["centroid"][sl, 0] = v * k / 10 + 30
+            ag["extent"][sl, 0] = EGO_LENGTH
+            ag["label_probabilities"][sl, 3] = 1.0
+        g = zarr.open_group(str(path), mode="w")
+        for name, arr in [("scenes", scenes), ("frames", fr), ("agents", ag)]:
+            g.array(name, arr)
+
+    write_store(tmp_path / "train.zarr", [10.0, 20.0])
+    write_store(tmp_path / "validate.zarr", [15.0])
+    write_store(tmp_path / "sample.zarr", [5.0])  # must be ignored
+    h = np.sort(load_lyft(tmp_path, workers=1))
+    want = np.sort([(30 - EGO_LENGTH) / v for v in (10.0, 20.0, 15.0) for _ in range(4)])
+    assert np.allclose(h, want), h
+    assert len(load_lyft(tmp_path / "sample.zarr", workers=2)) == 4  # a single store still works
+
+
 def test_ngsim_samples_1hz_and_filters(tmp_path):
     from headway.datasets.ngsim import load_ngsim
 

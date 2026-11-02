@@ -73,7 +73,7 @@ def find_dataset_path(dataset: str, root: Union[str, Path]) -> Optional[Path]:
         hits = sorted(d.glob("*.csv"), key=lambda p: -p.stat().st_size)
         return hits[0] if hits else None
     if dataset == "lyft":
-        return next(iter(sorted(d.glob("*.zarr"))), None)
+        return d if any(d.glob("*.zarr")) else None  # the folder; the loader picks the stores
     if dataset == "highd":
         return d if any(d.glob("*_tracks.csv")) else None
     return None
@@ -114,6 +114,8 @@ def run_dataset_pipeline(name: str, path: Optional[Path], args: argparse.Namespa
         data = LOADERS[name](path, workers=args.workers, **kw)
         source_desc = f"raw file ({path})"
     else:
+        if args.real_only:
+            raise SystemExit(f"[{name}] no raw data under {args.data_dir}/{name}/ and --real-only is set.")
         print(f"[{name}] Raw dataset not found on disk. Generating synthetic benchmark sample...")
         data = generate_synthetic_headways(name, size=args.synthetic_size, seed=args.seed)
         source_desc = "synthetic benchmark generator"
@@ -332,6 +334,8 @@ def main():
     parser.add_argument("--data-dir", default="data", help="Root directory holding dataset folders")
     parser.add_argument("--path", help="Explicit path overriding data-dir for a single dataset")
     parser.add_argument("--location", default="i-80", help="Location filter for NGSIM (default 'i-80')")
+    parser.add_argument("--real-only", action="store_true",
+                        help="fail if a dataset's raw files are missing instead of using synthetic data")
     parser.add_argument("--lanes", type=lambda s: [int(x) for x in s.split(",")],
                         help="NGSIM only: keep these Lane_IDs, e.g. 1,2,3,4,5,6 (paper states no lane filter)")
     parser.add_argument("--period", type=int,

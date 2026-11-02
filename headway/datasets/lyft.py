@@ -105,40 +105,50 @@ def scene_headways(
 def _chunk(task: Tuple[str, int, int]) -> np.ndarray:
     """Worker task processing a slice of scenes from a Level 5 Zarr store."""
     path, lo, hi = task
-    try:
-        import zarr
-        z = zarr.open_group(path, mode="r")
-        scenes = z["scenes"][lo:hi]
-        frames_arr = z["frames"]
-        agents_arr = z["agents"]
-    except Exception:
-        return np.array([], dtype=float)
+    import zarr  # errors are deliberately not caught: a silent empty result hides a bad store
+
+    z = zarr.open_group(path, mode="r")
+    scenes = z["scenes"][lo:hi]
+    # Scenes, their frames and their agents are stored contiguously, so read each array once
+    # per task. Slicing zarr per scene would decompress the same large chunks over and over.
+    f_lo, f_hi = scenes["frame_index_interval"][0, 0], scenes["frame_index_interval"][-1, 1]
+    frames_all = z["frames"][f_lo:f_hi]
+    a_lo, a_hi = frames_all["agent_index_interval"][0, 0], frames_all["agent_index_interval"][-1, 1]
+    ag = z["agents"][a_lo:a_hi]
+    vehicle = np.isin(ag["label_probabilities"].argmax(1), VEHICLE_LABELS)
 
     out: List[float] = []
     for scene in scenes:
         f0, f1 = scene["frame_index_interval"]
-        frames = frames_arr[f0:f1]
-        if len(frames) == 0:
+        fr = frames_all[f0 - f_lo:f1 - f_lo]
+        if len(fr) < 2:
             continue
-        iv = frames["agent_index_interval"]
-        a0 = iv[0, 0]
-        a1 = iv[-1, 1]
-        ag = agents_arr[a0:a1]
-        vehicle_mask = np.isin(ag["label_probabilities"].argmax(1), VEHICLE_LABELS)
-        rot = frames["ego_rotation"]
+        iv = fr["agent_index_interval"] - a_lo  # offsets into `ag`
+        rot = fr["ego_rotation"]
 
-        def frame_agents(k):
-            s = slice(iv[k, 0] - a0, iv[k, 1] - a0)
-            m = vehicle_mask[s]
+        def frame_agents(k, iv=iv):
+            s = slice(iv[k, 0], iv[k, 1])
+            m = vehicle[s]
             return ag["centroid"][s][m], ag["extent"][s][m, 0]
 
-        timestamps_s = frames["timestamp"] / 1e9
-        ego_xy = frames["ego_translation"][:, :2]
-        ego_yaw = np.arctan2(rot[:, 1, 0], rot[:, 0, 0])
-
-        out += scene_headways(timestamps_s, ego_xy, ego_yaw, frame_agents)
+        out += scene_headways(fr["timestamp"] / 1e9, fr["ego_translation"][:, :2],
+                              np.arctan2(rot[:, 1, 0], rot[:, 0, 0]), frame_agents)
 
     return np.array(out, dtype=float)
+
+
+MAX_SCENES_PER_TASK = 50  # bounds a worker's memory (about 100 MB of agents on the real data)
+
+
+def lyft_stores(path: Union[str, Path]) -> List[Path]:
+    """One .zarr store, or every store in a folder (sample.zarr is skipped when others exist)."""
+    p = Path(path)
+    if p.suffix == ".zarr":
+        return [p]
+    stores = sorted(p.glob("*.zarr"))
+    if not stores:
+        raise FileNotFoundError(f"no *.zarr stores in {path}")
+    return [s for s in stores if s.name != "sample.zarr"] or stores
 
 
 def load_lyft(
@@ -146,12 +156,12 @@ def load_lyft(
     workers: Optional[int] = None,
     chunks_per_worker: int = 4,
 ) -> np.ndarray:
-    """Load Lyft Level 5 Zarr dataset (e.g. sample.zarr, train.zarr).
+    """Load Lyft Level 5 Zarr data: one store (sample.zarr, train.zarr) or a folder of stores.
 
     Args:
-        path: Path to the .zarr directory.
-        workers: Number of worker processes.
-        chunks_per_worker: Number of scene tasks per worker core.
+        path: A .zarr directory, or a folder holding train/validate/test .zarr stores.
+        workers: Number of worker processes (default: all cores).
+        chunks_per_worker: Minimum number of scene tasks per worker core.
 
     Returns:
         1D NumPy array of validated 1 Hz time headways in [0.5, 25.0] s.
@@ -159,16 +169,16 @@ def load_lyft(
     try:
         import zarr
     except ImportError:
-        raise ImportError("zarr is required to load Lyft dataset. Install with `pip install zarr<3`")
+        raise ImportError("zarr is required for Lyft. Install with `uv sync --extra lyft`")
 
-    z = zarr.open_group(str(path), mode="r")
-    num_scenes = len(z["scenes"])
-    if num_scenes == 0:
-        return np.array([], dtype=float)
-
+    stores = lyft_stores(path)
+    print(f"Lyft stores: {', '.join(s.name for s in stores)}")
     total_workers = workers or (os.cpu_count() or 1)
-    step = max(1, num_scenes // (total_workers * chunks_per_worker))
-    tasks = [(str(path), lo, min(lo + step, num_scenes)) for lo in range(0, num_scenes, step)]
+    tasks = []
+    for s in stores:
+        n = len(zarr.open_group(str(s), mode="r")["scenes"])
+        step = max(1, min(MAX_SCENES_PER_TASK, n // (total_workers * chunks_per_worker)))
+        tasks += [(str(s), lo, min(lo + step, n)) for lo in range(0, n, step)]
 
     chunks = pmap(_chunk, tasks, workers)
     if not chunks:
