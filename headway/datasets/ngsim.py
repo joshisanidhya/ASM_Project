@@ -1,7 +1,23 @@
+"""Loader for the NGSIM vehicle trajectory dataset (FHWA).
+
+Paper settings:
+- Original frame rate: 10 Hz
+- Extracted sampling rate: 1 Hz (subsampled every 10 frames)
+- Traffic regime: Highway and urban road (human-driven vehicles, interrupted/uninterrupted)
+- Dataset focus: I-80 reconstructed freeway data (or user-specified location)
+- Headway variable: Time_Headway (temporal headway in seconds)
+- Preceding vehicle requirement: Preceding > 0 (identifies car-following interaction)
+- Filtering window: [0.5, 25.0] seconds
+"""
+from pathlib import Path
+from typing import Optional, Union
+
+import numpy as np
 import pandas as pd
 
 from .common import clip_headways
 
+NGSIM_DEFAULT_HZ = 10
 
 def load_ngsim(path, workers=None, location=None, lanes=None, hz=10):
     """NGSIM export (Data.gov). One sample per second per follower, leader must exist.

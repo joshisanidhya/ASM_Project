@@ -57,3 +57,26 @@ def test_lyft_zarr_roundtrip(tmp_path):
     for workers in (1, 2):
         h = load_lyft(tmp_path / "s.zarr", workers=workers)
         assert len(h) == 4 and np.allclose(h, want), h
+
+
+def test_ngsim_samples_1hz_and_filters(tmp_path):
+    from headway.datasets.ngsim import load_ngsim
+
+    csv_path = tmp_path / "trajectories.csv"
+    frames = np.arange(1, 51)
+    df = pd.DataFrame({
+        "Frame_ID": frames,
+        "Preceding": [2] * 50,
+        "Time_Headway": [2.5] * 50,
+        "Location": ["i-80"] * 50,
+    })
+    # Add leaderless and invalid rows
+    df.loc[df["Frame_ID"] == 20, "Preceding"] = 0
+    df.loc[df["Frame_ID"] == 30, "Time_Headway"] = 0.2  # below 0.5s floor
+    df.to_csv(csv_path, index=False)
+
+    h = load_ngsim(csv_path, location="i-80", hz=10)
+    # Frames 10, 40, 50 should be valid (20 has Preceding=0, 30 has thw=0.2)
+    assert len(h) == 3
+    assert np.allclose(h, 2.5)
+
