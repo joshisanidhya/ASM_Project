@@ -1,4 +1,4 @@
-"""Unified execution pipeline for headway distribution fitting, MCMC, MLE, simulation, and diagnostics.
+﻿"""Unified execution pipeline for headway distribution fitting, MCMC, MLE, simulation, and diagnostics.
 
 Supported Datasets (3 exclusively):
 1. highD: German highway drone dataset (25 Hz -> 1 Hz, uninterrupted highway flow)
@@ -108,7 +108,9 @@ def run_dataset_pipeline(name: str, path: Optional[Path], args: argparse.Namespa
 
     # 1. Load Data
     if path is not None:
-        kw = {"location": args.location} if name == "ngsim" and args.location else {}
+        kw = {}
+        if name == "ngsim":
+            kw = {"location": args.location, "lanes": args.lanes, "period": args.period}
         data = LOADERS[name](path, workers=args.workers, **kw)
         source_desc = f"raw file ({path})"
     else:
@@ -116,10 +118,6 @@ def run_dataset_pipeline(name: str, path: Optional[Path], args: argparse.Namespa
         data = generate_synthetic_headways(name, size=args.synthetic_size, seed=args.seed)
         source_desc = "synthetic benchmark generator"
 
-    kw = {}
-    if name == "ngsim":
-        kw = {"location": a.location, "lanes": a.lanes}
-    data = LOADERS[name](path, workers=a.workers, **kw)
     if len(data) == 0:
         raise ValueError(f"[{name}] No valid car-following headways extracted from {source_desc}.")
 
@@ -328,18 +326,27 @@ def run_dataset_pipeline(name: str, path: Optional[Path], args: argparse.Namespa
 
 
 def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--dataset", choices=[*LOADERS, "all"], default="all",
-                    help="'all' = ngsim + highd (Lyft is opt-in)")
-    ap.add_argument("--data-dir", default="data", help="root holding ngsim/, highd/, lyft/")
-    ap.add_argument("--path", help="explicit path, overrides --data-dir (single dataset only)")
-    ap.add_argument("--location", default="i-80", help="NGSIM only: Location to keep (paper: i-80)")
-    ap.add_argument("--lanes", type=lambda s: [int(x) for x in s.split(",")],
-                    help="NGSIM only: keep these Lane_IDs, e.g. 2,3,4,5 (paper states no lane filter)")
-    ap.add_argument("--iters", type=int, default=10000)
-    ap.add_argument("--workers", type=int, default=None, help="default: all cores")
-    ap.add_argument("--out", default="outputs")
-    a = ap.parse_args()
+    parser = argparse.ArgumentParser(description="Headway distribution modeling via MCMC and MLE.")
+    parser.add_argument("--dataset", choices=["highd", "ngsim", "lyft", "all"], default="all",
+                        help="Target dataset: 'highd', 'ngsim', 'lyft', or 'all'")
+    parser.add_argument("--data-dir", default="data", help="Root directory holding dataset folders")
+    parser.add_argument("--path", help="Explicit path overriding data-dir for a single dataset")
+    parser.add_argument("--location", default="i-80", help="Location filter for NGSIM (default 'i-80')")
+    parser.add_argument("--lanes", type=lambda s: [int(x) for x in s.split(",")],
+                        help="NGSIM only: keep these Lane_IDs, e.g. 1,2,3,4,5,6 (paper states no lane filter)")
+    parser.add_argument("--period", type=int,
+                        help="NGSIM only: keep one recording period (1 = first, 2 = second); "
+                             "see `python -m headway.ngsim_breakdown`")
+    parser.add_argument("--iters", type=int, default=10000, help="MCMC total iterations per chain (default 10,000)")
+    parser.add_argument("--warmup", type=int, default=5000, help="MCMC warmup iterations per chain (default 5,000)")
+    parser.add_argument("--chains", type=int, default=2, help="MCMC number of independent chains (default 2)")
+    parser.add_argument("--synthetic-size", type=int, default=15000, help="Size of synthetic sample if raw dataset absent")
+    parser.add_argument("--sample-paths", type=int, default=5, help="Number of realization sample paths to simulate (default 5)")
+    parser.add_argument("--sim-time", type=float, default=300.0, help="Arrival process simulation horizon in seconds (default 300.0s)")
+    parser.add_argument("--seed", type=int, default=42, help="Random seed for reproducibility")
+    parser.add_argument("--workers", type=int, default=None, help="Parallel worker processes (default: CPU count)")
+    parser.add_argument("--out", default="outputs", help="Output directory")
+    args = parser.parse_args()
 
     target_datasets = ["highd", "ngsim", "lyft"] if args.dataset == "all" else [args.dataset]
     if args.path and len(target_datasets) != 1:
