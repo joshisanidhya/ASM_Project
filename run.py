@@ -42,7 +42,9 @@ def run_dataset(name, path, a):
     from headway.metrics import evaluate
     from headway.plots import plot_fits, plot_posterior
 
-    kw = {"location": a.location} if name == "ngsim" and a.location else {}
+    kw = {}
+    if name == "ngsim":
+        kw = {"location": a.location, "lanes": a.lanes}
     data = LOADERS[name](path, workers=a.workers, **kw)
     if len(data) == 0:
         raise SystemExit(f"{name}: no headways found in {path} (wrong --location?)")
@@ -88,6 +90,8 @@ def main():
     ap.add_argument("--data-dir", default="data", help="root holding ngsim/, highd/, lyft/")
     ap.add_argument("--path", help="explicit path, overrides --data-dir (single dataset only)")
     ap.add_argument("--location", default="i-80", help="NGSIM only: Location to keep (paper: i-80)")
+    ap.add_argument("--lanes", type=lambda s: [int(x) for x in s.split(",")],
+                    help="NGSIM only: keep these Lane_IDs, e.g. 2,3,4,5 (paper states no lane filter)")
     ap.add_argument("--iters", type=int, default=10000)
     ap.add_argument("--workers", type=int, default=None, help="default: all cores")
     ap.add_argument("--out", default="outputs")
