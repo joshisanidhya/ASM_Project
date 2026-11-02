@@ -73,7 +73,12 @@ def find_dataset_path(dataset: str, root: Union[str, Path]) -> Optional[Path]:
         hits = sorted(d.glob("*.csv"), key=lambda p: -p.stat().st_size)
         return hits[0] if hits else None
     if dataset == "lyft":
-        return d if any(d.glob("*.zarr")) else None  # the folder; the loader picks the stores
+        # The folder holding the stores: data/lyft itself, data/lyft/scenes, or the whole Kaggle
+        # download (data/lyft/<kaggle-folder>/scenes). The loader then picks the stores.
+        for c in [d, d / "scenes", *d.glob("*/scenes")]:
+            if any(c.glob("*.zarr")):
+                return c
+        return None
     if dataset == "highd":
         return d if any(d.glob("*_tracks.csv")) else None
     return None
