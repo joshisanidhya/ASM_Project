@@ -1,10 +1,10 @@
-"""Publication-quality visualization suite for headway distributions, MCMC diagnostics, and MLE extensions.
+"""Publication-quality visualization suite for headway distributions, and MCMC diagnostics.
 
 Produces figures corresponding to:
 - Frequency histogram with fitted curves (paper Figure 5)
 - MCMC trace plots and posterior distributions (paper Figure 4)
 - Empirical vs theoretical CDF comparisons
-- MCMC vs MLE parameter, runtime, and goodness-of-fit comparisons
+- KL divergence and Wasserstein distance per distribution (paper Table 5)
 - Stochastic simulation validation figures
 """
 from pathlib import Path
@@ -201,112 +201,30 @@ def plot_posteriors(
     plt.close(fig)
 
 
-def plot_mcmc_vs_mle_comparison(
-    title: str,
-    counts: np.ndarray,
-    mcmc_params: Dict[str, Sequence[float]],
-    mle_params: Dict[str, Sequence[float]],
-    path: Union[str, Path],
-) -> None:
-    """Plot comparison of fitted distribution curves between MCMC and MLE."""
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
-    n = float(counts.sum())
-
-    for ax, param_dict, subtitle in [(ax1, mcmc_params, "MCMC (Bayesian Posterior Mean)"),
-                                     (ax2, mle_params, "MLE (Maximum Likelihood)")]:
-        ax.bar(CENTERS, counts, width=0.48, color="#E0E0E0", edgecolor="#999999", alpha=0.7, label="Observed Data")
-        for dname, theta in param_dict.items():
-            if dname not in DISTS:
-                continue
-            color = PALETTE.get(dname, "#333333")
-            is_proposed = (dname == "Proposed")
-            lw = 2.4 if is_proposed else 1.4
-            ls = "-" if is_proposed else "--"
-            expected_counts = n * DISTS[dname].bin_probs(theta)
-            ax.plot(CENTERS, expected_counts, label=dname, color=color, lw=lw, linestyle=ls)
-
-        ax.set_title(f"{title}: {subtitle}", fontsize=12, fontweight="bold")
-        ax.set_xlabel("Headway [sec]", fontsize=11)
-        ax.set_ylabel("Frequency", fontsize=11)
-        ax.set_xlim(0.0, 25.5)
-        ax.grid(True, linestyle=":", alpha=0.5)
-        ax.legend(frameon=True, fontsize=9)
-
-    fig.tight_layout()
-    Path(path).parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(path, dpi=200, bbox_inches="tight")
-    plt.close(fig)
-
-
-def plot_runtime_comparison(
-    mcmc_runtimes: Dict[str, float],
-    mle_runtimes: Dict[str, float],
-    path: Union[str, Path],
-) -> None:
-    """Bar chart comparing execution runtime between MCMC and MLE."""
-    dists = [d for d in DISTS.keys() if d in mcmc_runtimes and d in mle_runtimes]
-    mcmc_vals = [mcmc_runtimes[d] for d in dists]
-    mle_vals = [mle_runtimes[d] for d in dists]
-
-    x = np.arange(len(dists))
-    width = 0.35
-
-    fig, ax = plt.subplots(figsize=(10, 5.5))
-    ax.bar(x - width / 2, mcmc_vals, width, label="MCMC (2 chains x 10,000)", color="#4C72B0")
-    ax.bar(x + width / 2, mle_vals, width, label="MLE (Numerical Optimization)", color="#55A868")
-
-    ax.set_ylabel("Runtime [seconds] (log scale)", fontsize=11)
-    ax.set_yscale("log")
-    ax.set_title("Runtime Comparison: MCMC vs. Maximum Likelihood Estimation", fontsize=13, fontweight="bold")
-    ax.set_xticks(x)
-    ax.set_xticklabels(dists, rotation=25, ha="right", fontsize=10)
-    ax.grid(True, linestyle=":", alpha=0.5, axis="y")
-    ax.legend(frameon=True, fontsize=10)
-    fig.tight_layout()
-
-    Path(path).parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(path, dpi=200, bbox_inches="tight")
-    plt.close(fig)
-
-
 def plot_goodness_of_fit_metrics(
     mcmc_metrics: Dict[str, Dict[str, float]],
-    mle_metrics: Optional[Dict[str, Dict[str, float]]],
     path: Union[str, Path],
 ) -> None:
-    """Grouped bar chart comparing KL divergence and Wasserstein distance."""
+    """Bar charts of KL divergence and Wasserstein distance (paper Table 5)."""
     dists = list(mcmc_metrics.keys())
     mcmc_kl = [mcmc_metrics[d]["kl"] for d in dists]
     mcmc_w = [mcmc_metrics[d]["wasserstein"] for d in dists]
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
-
     x = np.arange(len(dists))
-    width = 0.35 if mle_metrics else 0.5
 
-    # KL Divergence
-    ax1.bar(x - width/2 if mle_metrics else x, mcmc_kl, width, label="MCMC", color="#4C72B0")
-    if mle_metrics:
-        mle_kl = [mle_metrics[d]["kl"] for d in dists]
-        ax1.bar(x + width/2, mle_kl, width, label="MLE", color="#55A868")
+    ax1.bar(x, mcmc_kl, 0.5, color="#4C72B0")
     ax1.set_title("Kullback-Leibler Divergence (Lower is Better)", fontsize=11, fontweight="bold")
     ax1.set_ylabel("D_KL", fontsize=11)
-    ax1.set_xticks(x)
-    ax1.set_xticklabels(dists, rotation=30, ha="right", fontsize=9)
-    ax1.grid(True, linestyle=":", alpha=0.5)
-    ax1.legend(frameon=True)
 
-    # Wasserstein Distance
-    ax2.bar(x - width/2 if mle_metrics else x, mcmc_w, width, label="MCMC", color="#4C72B0")
-    if mle_metrics:
-        mle_w = [mle_metrics[d]["wasserstein"] for d in dists]
-        ax2.bar(x + width/2, mle_w, width, label="MLE", color="#55A868")
-    ax2.set_title("Distributional Wasserstein Distance [s] (Lower is Better)", fontsize=11, fontweight="bold")
-    ax2.set_ylabel("W_1 [seconds]", fontsize=11)
-    ax2.set_xticks(x)
-    ax2.set_xticklabels(dists, rotation=30, ha="right", fontsize=9)
-    ax2.grid(True, linestyle=":", alpha=0.5)
-    ax2.legend(frameon=True)
+    ax2.bar(x, mcmc_w, 0.5, color="#4C72B0")
+    ax2.set_title("Wasserstein Distance, Eq. 17 (Lower is Better)", fontsize=11, fontweight="bold")
+    ax2.set_ylabel("W", fontsize=11)
+
+    for ax in (ax1, ax2):
+        ax.set_xticks(x)
+        ax.set_xticklabels(dists, rotation=30, ha="right", fontsize=9)
+        ax.grid(True, linestyle=":", alpha=0.5)
 
     fig.tight_layout()
     Path(path).parent.mkdir(parents=True, exist_ok=True)

@@ -2,14 +2,14 @@
 - Kolmogorov-Smirnov test (Eq. 14)
 - Chi-square goodness-of-fit test with low-frequency bin merging (Eq. 15)
 - Kullback-Leibler divergence (Eq. 16)
-- 1D Distributional Wasserstein Distance (Eq. 17, Vallender 1974)
+- Wasserstein distance (Eq. 17)
 """
 from typing import Any, Dict, Optional, Sequence, Tuple
 
 import numpy as np
-from scipy.stats import chi2, ks_2samp, kstest, wasserstein_distance
+from scipy.stats import chi2, ks_2samp, kstest
 
-from .distributions import ALPHA, CENTERS, EDGES, T_MAX, Dist
+from .distributions import ALPHA, T_MAX, Dist
 
 _GRID = np.linspace(ALPHA, T_MAX, 50_001)
 
@@ -71,9 +71,8 @@ def evaluate(
         chi2_dof: Chi-square degrees of freedom (bins - 1 - n_params)
         chi2_p: Chi-square p-value
         kl: KL divergence D_KL(P_obs || P_model) over the 49 bins
-        wasserstein: True 1D Distributional Wasserstein-1 distance [seconds]
-        wasserstein_data: 1D Wasserstein distance between data and simulated sample [seconds]
-        wasserstein_sorted_proxy: Sorted bin probability difference (paper Table 5 proxy)
+        wasserstein: Eq. 17 with p=1, on the same scale as the paper's Table 5 (no unit: it
+            compares bin probabilities, not times). See the note where it is computed.
     """
     n = float(counts.sum())
     p_model = dist.bin_probs(theta)
@@ -94,10 +93,8 @@ def evaluate(
         ks_2 = ks_2samp(data, sim)
         ks_2samp_D = float(ks_2.statistic)
         ks_2samp_p = float(ks_2.pvalue)
-        w_data = float(wasserstein_distance(data, sim))
     else:
         ks_2samp_D, ks_2samp_p = np.nan, np.nan
-        w_data = np.nan
 
     # 3. Chi-square test (Eq. 15) with bin merging for Oi < 5
     o, e = merge_bins_for_chi2(counts, n * p_model, min_count=5.0)
@@ -112,12 +109,11 @@ def evaluate(
     safe_p_model = np.maximum(p_model, 1e-300)
     kl = float(np.sum(p_obs[m] * np.log(p_obs[m] / safe_p_model[m])))
 
-    # 5. True 1D Distributional Wasserstein distance (Eq. 17, Vallender 1974)
-    # W1 = int |F_obs(t) - F_model(t)| dt along the time axis [seconds]
-    w_dist = float(wasserstein_distance(CENTERS, CENTERS, p_obs, p_model))
-
-    # Paper's sorted bin proxy (Table 5 magnitude: ~1e-3)
-    w_proxy = float(np.mean(np.abs(np.sort(p_obs) - np.sort(p_model))))
+    # 5. Wasserstein distance (Eq. 17, p = 1): mean |X_(i) - Y_(i)| over the sorted observed and
+    # model bin-probability vectors. The paper does not say what X and Y are; this reading is the
+    # one whose magnitudes (~1e-3, Table 5) fit, whereas a distance along the time axis comes out
+    # in seconds and is ~100x larger. It ignores where each bin sits on the time axis.
+    w_dist = float(np.mean(np.abs(np.sort(p_obs) - np.sort(p_model))))
 
     return {
         "ks_D": ks_D,
@@ -129,6 +125,4 @@ def evaluate(
         "chi2_p": chi_p,
         "kl": kl,
         "wasserstein": w_dist,
-        "wasserstein_data": w_data,
-        "wasserstein_sorted_proxy": w_proxy,
     }

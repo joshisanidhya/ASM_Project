@@ -71,12 +71,11 @@ def test_evaluate_recovers_small_metrics_for_true_model():
     assert m["ks_D"] < 0.02
     assert m["ks_p"] > 0.05
     assert m["kl"] < 0.005
-    assert m["wasserstein"] < 0.02
-    assert m["wasserstein_sorted_proxy"] < 0.002
+    assert m["wasserstein"] < 0.002  # Eq. 17 on the paper's scale (Table 5 values are ~1e-3)
 
     # A severely mismatched model must produce drastically higher error metrics
     theta_wrong = (8.0, 0.9)
     m_wrong = evaluate(P, theta_wrong, data, counts, seed=123)
     assert m_wrong["kl"] > 50 * m["kl"]
-    assert m_wrong["wasserstein"] > 50 * m["wasserstein"]
+    assert m_wrong["wasserstein"] > 10 * m["wasserstein"]
     assert m_wrong["ks_D"] > 5 * m["ks_D"]

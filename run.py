@@ -1,4 +1,4 @@
-﻿"""Unified execution pipeline for headway distribution fitting, MCMC, MLE, simulation, and diagnostics.
+"""Unified execution pipeline for headway distribution fitting (MCMC), simulation, and diagnostics.
 
 Supported Datasets (2 exclusively):
 1. highD: German highway drone dataset (25 Hz -> 1 Hz, uninterrupted highway flow)
@@ -6,9 +6,8 @@ Supported Datasets (2 exclusively):
 
 Features:
 - Reproduces paper MCMC procedure (2 chains x 10,000 iterations, 5,000 warmup)
-- Maximum Likelihood Estimation (MLE) research extension across all 7 distributions
 - Stochastic simulation module for synthetic headway generation & validation
-- Rigorous goodness-of-fit evaluation: KS, Chi-Square, KL divergence, 1D distributional Wasserstein
+- Goodness-of-fit evaluation as in the paper: KS, Chi-Square, KL divergence, Wasserstein (Eq. 17)
 - Publication-quality visualizations and standardized CSV exports under `outputs/`
 """
 import argparse
@@ -23,7 +22,6 @@ import pandas as pd
 from headway.datasets import LOADERS
 from headway.distributions import ALPHA, DISTS, EDGES, T_MAX
 from headway.fit import fit_all
-from headway.mle import compare_mcmc_vs_mle, fit_all_mle
 from headway.simulation import (
     compare_empirical_and_simulated,
     compute_summary_statistics,
@@ -76,16 +74,14 @@ def generate_synthetic_headways(dataset: str, size: int = 15000, seed: int = 42)
 
 
 def run_dataset_pipeline(name: str, path: Optional[Path], args: argparse.Namespace) -> Dict[str, Any]:
-    """Execute end-to-end MCMC, MLE, simulation, metrics, and visualization for one dataset."""
+    """Execute end-to-end MCMC, simulation, metrics, and visualization for one dataset."""
     from headway.diagnostics import split_rhat, summarize_posterior
     from headway.metrics import evaluate
     from headway.plots import (
         plot_empirical_cdf,
         plot_fitted_distributions,
         plot_goodness_of_fit_metrics,
-        plot_mcmc_vs_mle_comparison,
         plot_posteriors,
-        plot_runtime_comparison,
         plot_simulation_validation,
         plot_traces,
     )
@@ -187,28 +183,14 @@ def run_dataset_pipeline(name: str, path: Optional[Path], args: argparse.Namespa
         plot_posteriors(f"{name.upper()} — {dname}", pnames, draws, fig_dir / f"posterior_{slug}.png")
 
         flag = " [OK]" if is_converged else " [NOT CONVERGED]"
-        print(f"  {dname:22s} | KL={m['kl']:.4f} | W={m['wasserstein']:.4f}s | max R-hat={np.nanmax(rhat):.3f} | acc={avg_acc:.2%}{flag}")
+        print(f"  {dname:22s} | KL={m['kl']:.4f} | W={m['wasserstein']:.4f} | max R-hat={np.nanmax(rhat):.3f} | acc={avg_acc:.2%}{flag}")
 
     # Plot proposed trace and posterior under default names
     if "Proposed" in fits:
         plot_traces(f"{name.upper()} — Proposed", DISTS["Proposed"].params, fits["Proposed"].full_draws, args.warmup, fig_dir / "traces.png")
         plot_posteriors(f"{name.upper()} — Proposed", DISTS["Proposed"].params, fits["Proposed"].draws, fig_dir / "posterior.png")
 
-    # 4. Research Extension: Maximum Likelihood Estimation (MLE)
-    print(f"\n[{name}] Running Maximum Likelihood Estimation (MLE extension)...")
-    mle_results = fit_all_mle(counts, data=data, tmin=tmin, workers=args.workers)
-    mle_params = {d: mle_results[d].theta for d in mle_results}
-    mle_metrics = {d: mle_results[d].metrics for d in mle_results}
-    mle_runtimes = {d: mle_results[d].runtime_seconds for d in mle_results}
-
-    for dname, mle in mle_results.items():
-        status = "OK" if mle.converged else "FAIL"
-        print(f"  MLE {dname:18s} | KL={mle.metrics['kl']:.4f} | W={mle.metrics['wasserstein']:.4f}s | time={mle.runtime_seconds:.3f}s [{status}]")
-
-    # MCMC vs MLE Comparison DataFrame
     mcmc_metrics_dict = {r["distribution"]: r for r in metric_rows}
-    comp_df = compare_mcmc_vs_mle(mcmc_params, mcmc_metrics_dict, mcmc_runtimes, mle_results)
-    comp_df.to_csv(out_dir / "mcmc_vs_mle.csv", index=False)
 
     # 5. Stochastic Simulation Module
     print(f"\n[{name}] Running Stochastic Simulation module (Proposed distribution)...")
@@ -284,24 +266,19 @@ def run_dataset_pipeline(name: str, path: Optional[Path], args: argparse.Namespa
     # 7. Save Publication Figures
     plot_fitted_distributions(f"{name.upper()} — Fitted Headway Distributions", counts, mcmc_params, fig_dir / "fitted_distributions.png")
     plot_empirical_cdf(f"{name.upper()} — Cumulative Distribution Functions", data, mcmc_params, fig_dir / "empirical_cdf.png")
-    plot_mcmc_vs_mle_comparison(name.upper(), counts, mcmc_params, mle_params, fig_dir / "mcmc_vs_mle.png")
-    plot_runtime_comparison(mcmc_runtimes, mle_runtimes, fig_dir / "runtime_comparison.png")
-    plot_goodness_of_fit_metrics(mcmc_metrics_dict, mle_metrics, fig_dir / "goodness_of_fit.png")
+    plot_goodness_of_fit_metrics(mcmc_metrics_dict, fig_dir / "goodness_of_fit.png")
     plot_simulation_validation(data, sim_samples, "Proposed Distribution", fig_dir / "simulation.png")
 
     # 8. Save Standardized Output CSVs
     res_df = pd.DataFrame(metric_rows).set_index("distribution")
-    stat_cols = ["ks_D", "ks_p", "ks_2samp_D", "ks_2samp_p", "chi2", "chi2_dof", "chi2_p", "kl", "wasserstein", "wasserstein_data", "wasserstein_sorted_proxy"]
+    stat_cols = ["ks_D", "ks_p", "ks_2samp_D", "ks_2samp_p", "chi2", "chi2_dof", "chi2_p", "kl", "wasserstein"]
     param_cols = [c for c in res_df.columns if c not in stat_cols]
 
     res_df[param_cols].to_csv(out_dir / "params.csv")
     res_df[["ks_D", "ks_p", "ks_2samp_D", "ks_2samp_p", "chi2", "chi2_dof", "chi2_p"]].to_csv(out_dir / "tests.csv")
-    res_df[["kl", "wasserstein", "wasserstein_data", "wasserstein_sorted_proxy"]].to_csv(out_dir / "metrics.csv")
+    res_df[["kl", "wasserstein"]].to_csv(out_dir / "metrics.csv")
     pd.DataFrame(posterior_rows).to_csv(out_dir / "posterior.csv", index=False)
     pd.DataFrame(diagnostics_rows).to_csv(out_dir / "diagnostics.csv", index=False)
-
-    mle_rows = [res.to_dict() for res in mle_results.values()]
-    pd.DataFrame(mle_rows).to_csv(out_dir / "mle_results.csv", index=False)
 
     print(f"[{name}] Successfully generated all CSV tables and figures under {out_dir}/")
     return {
@@ -309,14 +286,11 @@ def run_dataset_pipeline(name: str, path: Optional[Path], args: argparse.Namespa
         "n_headways": len(data),
         "mean": float(data.mean()),
         "res_df": res_df,
-        "comp_df": comp_df,
-        "mcmc_runtimes": mcmc_runtimes,
-        "mle_runtimes": mle_runtimes,
     }
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Headway distribution modeling via MCMC and MLE.")
+    parser = argparse.ArgumentParser(description="Headway distribution modeling via MCMC.")
     parser.add_argument("--dataset", choices=["highd", "ngsim", "all"], default="all",
                         help="Target dataset: 'highd', 'ngsim', or 'all'")
     parser.add_argument("--data-dir", default="data", help="Root directory holding dataset folders")
@@ -355,41 +329,19 @@ def main():
 
     # Cross-dataset aggregated summaries
     cross_rows = []
-    mcmc_vs_mle_rows = []
-    runtime_rows = []
-
     for item in all_dataset_results:
-        dname = item["name"]
-        res_df = item["res_df"]
-        for dist_name, row in res_df.iterrows():
+        for dist_name, row in item["res_df"].iterrows():
             cross_rows.append({
-                "dataset": dname,
+                "dataset": item["name"],
                 "distribution": dist_name,
                 "n_headways": item["n_headways"],
                 **row.to_dict(),
-            })
-        comp_df = item["comp_df"]
-        comp_df = comp_df.assign(dataset=dname)
-        mcmc_vs_mle_rows.append(comp_df)
-
-        for dist_name in DISTS.keys():
-            runtime_rows.append({
-                "dataset": dname,
-                "distribution": dist_name,
-                "mcmc_runtime_s": item["mcmc_runtimes"].get(dist_name, np.nan),
-                "mle_runtime_s": item["mle_runtimes"].get(dist_name, np.nan),
             })
 
     if cross_rows:
         cross_df = pd.DataFrame(cross_rows)
         cross_df.to_csv(comparisons_dir / "cross_dataset_comparison.csv", index=False)
         cross_df.to_csv(Path(args.out) / "all_results.csv", index=False)
-
-    if mcmc_vs_mle_rows:
-        pd.concat(mcmc_vs_mle_rows, ignore_index=True).to_csv(comparisons_dir / "mcmc_vs_mle.csv", index=False)
-
-    if runtime_rows:
-        pd.DataFrame(runtime_rows).to_csv(comparisons_dir / "runtime_comparison.csv", index=False)
 
     print(f"\n=======================================================")
     print(f" PIPELINE COMPLETE: Wrote all outputs to {args.out}/")
