@@ -3,7 +3,6 @@
 Supports exclusively:
 1. highD (25 Hz -> 1 Hz, uninterrupted highway flow)
 2. NGSIM (10 Hz -> 1 Hz, I-80 interrupted/uninterrupted highway flow)
-3. Lyft Level 5 (10 Hz -> 1 Hz, urban mixed traffic)
 """
 from dataclasses import dataclass
 from typing import Dict, Optional

@@ -1,9 +1,8 @@
 ﻿"""Unified execution pipeline for headway distribution fitting, MCMC, MLE, simulation, and diagnostics.
 
-Supported Datasets (3 exclusively):
+Supported Datasets (2 exclusively):
 1. highD: German highway drone dataset (25 Hz -> 1 Hz, uninterrupted highway flow)
 2. NGSIM: FHWA I-80 trajectory dataset (10 Hz -> 1 Hz, interrupted/uninterrupted highway flow)
-3. Lyft: Level 5 AV prediction dataset (10 Hz -> 1 Hz, urban mixed traffic)
 
 Features:
 - Reproduces paper MCMC procedure (2 chains x 10,000 iterations, 5,000 warmup)
@@ -52,15 +51,6 @@ PAPER_TABLE3_PARAMS = {
         "Burr": (5.237, 0.524, 2.021),
         "Shifted Exponential": (0.423, 0.558),
     },
-    "lyft": {
-        "Proposed": (4.598, 0.676),
-        "Shifted Log-normal": (1.448, 0.525, 0.892),
-        "Weibull": (1.926, 6.649),
-        "Log-logistic": (4.082, 5.019),
-        "Gamma": (4.654, 0.794),
-        "Burr": (10.609, 0.203, 3.387),
-        "Shifted Exponential": (0.201, 0.894),
-    },
 }
 
 
@@ -72,13 +62,6 @@ def find_dataset_path(dataset: str, root: Union[str, Path]) -> Optional[Path]:
     if dataset == "ngsim":
         hits = sorted(d.glob("*.csv"), key=lambda p: -p.stat().st_size)
         return hits[0] if hits else None
-    if dataset == "lyft":
-        # The folder holding the stores: data/lyft itself, data/lyft/scenes, or the whole Kaggle
-        # download (data/lyft/<kaggle-folder>/scenes). The loader then picks the stores.
-        for c in [d, d / "scenes", *d.glob("*/scenes")]:
-            if any(c.glob("*.zarr")):
-                return c
-        return None
     if dataset == "highd":
         return d if any(d.glob("*_tracks.csv")) else None
     return None
@@ -334,8 +317,8 @@ def run_dataset_pipeline(name: str, path: Optional[Path], args: argparse.Namespa
 
 def main():
     parser = argparse.ArgumentParser(description="Headway distribution modeling via MCMC and MLE.")
-    parser.add_argument("--dataset", choices=["highd", "ngsim", "lyft", "all"], default="all",
-                        help="Target dataset: 'highd', 'ngsim', 'lyft', or 'all'")
+    parser.add_argument("--dataset", choices=["highd", "ngsim", "all"], default="all",
+                        help="Target dataset: 'highd', 'ngsim', or 'all'")
     parser.add_argument("--data-dir", default="data", help="Root directory holding dataset folders")
     parser.add_argument("--path", help="Explicit path overriding data-dir for a single dataset")
     parser.add_argument("--location", default="i-80", help="Location filter for NGSIM (default 'i-80')")
@@ -357,7 +340,7 @@ def main():
     parser.add_argument("--out", default="outputs", help="Output directory")
     args = parser.parse_args()
 
-    target_datasets = ["highd", "ngsim", "lyft"] if args.dataset == "all" else [args.dataset]
+    target_datasets = ["highd", "ngsim"] if args.dataset == "all" else [args.dataset]
     if args.path and len(target_datasets) != 1:
         parser.error("--path can only be specified when a single --dataset is selected.")
 

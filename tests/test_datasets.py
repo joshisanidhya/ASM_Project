@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 
 from headway.datasets.highd import load_highd
-from headway.datasets.lyft import EGO_LENGTH, leader_gap, load_lyft
 
 
 def _write_highd(folder, rec):
@@ -20,81 +19,6 @@ def test_highd_samples_1hz_and_filters(tmp_path):
     for workers in (1, 2):  # inline and process pool
         h = load_highd(tmp_path, workers=workers)
         assert h.tolist() == [2.0] * 8  # frames 25/50/75/100 x 2 recordings
-
-
-def test_leader_gap_picks_nearest_in_lane_vehicle():
-    cars = np.array([[30.0, 0.5], [20.0, 5.0], [-10.0, 0.0], [50.0, 0.0]])  # lead, adjacent lane, behind, far
-    gap = leader_gap(np.zeros(2), 0.0, cars, np.full(4, EGO_LENGTH))
-    assert abs(gap - (30 - EGO_LENGTH)) < 1e-9
-    assert np.isnan(leader_gap(np.zeros(2), 0.0, cars[1:3], np.full(2, 4.0)))
-
-
-def test_lyft_zarr_roundtrip(tmp_path):
-    zarr = __import__("pytest").importorskip("zarr")
-    T = 31  # 3 s at 10 Hz, AV at 10 m/s, one car 30 m ahead at the same speed
-    scene = np.zeros(1, [("frame_index_interval", "<i8", (2,)), ("host", "<U16"),
-                         ("start_time", "<i8"), ("end_time", "<i8")])
-    scene["frame_index_interval"] = [[0, T]]
-    fr = np.zeros(T, [("timestamp", "<i8"), ("agent_index_interval", "<i8", (2,)),
-                      ("traffic_light_faces_index_interval", "<i8", (2,)),
-                      ("ego_translation", "<f8", (3,)), ("ego_rotation", "<f8", (3, 3))])
-    k = np.arange(T)
-    fr["timestamp"] = k * 100_000_000
-    fr["agent_index_interval"] = np.stack([k, k + 1], 1)
-    fr["ego_translation"][:, 0] = 10.0 * k / 10
-    fr["ego_rotation"] = np.eye(3)
-    ag = np.zeros(T, [("centroid", "<f8", (2,)), ("extent", "<f4", (3,)), ("yaw", "<f4"),
-                      ("velocity", "<f4", (2,)), ("track_id", "<u8"), ("label_probabilities", "<f4", (17,))])
-    ag["centroid"][:, 0] = 10.0 * k / 10 + 30
-    ag["centroid"][:, 1] = 0.5
-    ag["extent"][:, 0] = EGO_LENGTH
-    ag["label_probabilities"][:, 3] = 1.0  # CAR
-    g = zarr.open_group(str(tmp_path / "s.zarr"), mode="w")
-    for name, arr in [("scenes", scene), ("frames", fr), ("agents", ag)]:
-        g.array(name, arr)
-
-    want = (30 - EGO_LENGTH) / 10
-    for workers in (1, 2):
-        h = load_lyft(tmp_path / "s.zarr", workers=workers)
-        assert len(h) == 4 and np.allclose(h, want), h
-
-
-def test_lyft_folder_of_stores_with_several_scenes(tmp_path):
-    """Two scenes per store, two stores in a folder; sample.zarr is skipped when others exist."""
-    zarr = __import__("pytest").importorskip("zarr")
-    T = 31
-
-    def write_store(path, speeds):  # one scene per speed [m/s]; a leader 30 m ahead, same speed
-        n = len(speeds)
-        scenes = np.zeros(n, [("frame_index_interval", "<i8", (2,)), ("host", "<U16"),
-                              ("start_time", "<i8"), ("end_time", "<i8")])
-        fr = np.zeros(n * T, [("timestamp", "<i8"), ("agent_index_interval", "<i8", (2,)),
-                              ("traffic_light_faces_index_interval", "<i8", (2,)),
-                              ("ego_translation", "<f8", (3,)), ("ego_rotation", "<f8", (3, 3))])
-        ag = np.zeros(n * T, [("centroid", "<f8", (2,)), ("extent", "<f4", (3,)), ("yaw", "<f4"),
-                              ("velocity", "<f4", (2,)), ("track_id", "<u8"),
-                              ("label_probabilities", "<f4", (17,))])
-        for i, v in enumerate(speeds):
-            k, sl = np.arange(T), slice(i * T, (i + 1) * T)
-            scenes["frame_index_interval"][i] = [i * T, (i + 1) * T]
-            fr["timestamp"][sl] = k * 100_000_000
-            fr["agent_index_interval"][sl] = np.stack([i * T + k, i * T + k + 1], 1)
-            fr["ego_translation"][sl, 0] = v * k / 10
-            fr["ego_rotation"][sl] = np.eye(3)
-            ag["centroid"][sl, 0] = v * k / 10 + 30
-            ag["extent"][sl, 0] = EGO_LENGTH
-            ag["label_probabilities"][sl, 3] = 1.0
-        g = zarr.open_group(str(path), mode="w")
-        for name, arr in [("scenes", scenes), ("frames", fr), ("agents", ag)]:
-            g.array(name, arr)
-
-    write_store(tmp_path / "train.zarr", [10.0, 20.0])
-    write_store(tmp_path / "validate.zarr", [15.0])
-    write_store(tmp_path / "sample.zarr", [5.0])  # must be ignored
-    h = np.sort(load_lyft(tmp_path, workers=1))
-    want = np.sort([(30 - EGO_LENGTH) / v for v in (10.0, 20.0, 15.0) for _ in range(4)])
-    assert np.allclose(h, want), h
-    assert len(load_lyft(tmp_path / "sample.zarr", workers=2)) == 4  # a single store still works
 
 
 def test_ngsim_samples_1hz_and_filters(tmp_path):
@@ -117,4 +41,3 @@ def test_ngsim_samples_1hz_and_filters(tmp_path):
     # Frames 10, 40, 50 should be valid (20 has Preceding=0, 30 has thw=0.2)
     assert len(h) == 3
     assert np.allclose(h, 2.5)
-
