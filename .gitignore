@@ -7,4 +7,10 @@ outputs/
 data/*/*
 !data/*/.gitkeep
 
+docs/*/*
+docs/
+ASM Project 2026M_instructions.pdf
+README.md
+ALL_5_Datasets_Schemas.txt
+
 Lyft\ tree.txt
