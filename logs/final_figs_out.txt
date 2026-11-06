@@ -1,0 +1,8 @@
+[highd] n=1,225,460 max |sim - saved| over mean_sim/var_sim = 0.00e+00
+[ngsim] n=117,068 max |sim - saved| over mean_sim/var_sim = 0.00e+00
+wrote fig_fits.png
+wrote fig_paths.png
+wrote fig_counts.png
+wrote fig_diagram.png
+wrote fig_stateprob.png
+wrote fig_posterior.png

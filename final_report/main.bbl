@@ -1,0 +1,99 @@
+\begin{thebibliography}{13}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Leungbootnak et~al.(n.d.)Leungbootnak, Li, Wei, Lord, and
+  Zhang]{leungbootnak}
+N.~Leungbootnak, Z.~Li, Z.~Wei, D.~Lord, and Y.~Zhang.
+\newblock Modeling headway in heterogeneous and mixed traffic flow: A
+  statistical distribution based on a general exponential function.
+\newblock Zachry Department of Civil \& Environmental Engineering, Texas A\&M
+  University. Unpublished manuscript, n.d.
+
+\bibitem[Adams(1936)]{adams1936}
+W.~F. Adams.
+\newblock Road traffic considered as a random series.
+\newblock \emph{Journal of the Institution of Civil Engineers}, 4\penalty0
+  (1):\penalty0 121--130, 1936.
+\newblock \doi{10.1680/ijoti.1936.14802}.
+
+\bibitem[Cowan(1975)]{cowan1975}
+R.~J. Cowan.
+\newblock Useful headway models.
+\newblock \emph{Transportation Research}, 9\penalty0 (6):\penalty0 371--375,
+  1975.
+\newblock \doi{10.1016/0041-1647(75)90008-8}.
+
+\bibitem[Hastings(1970)]{hastings1970}
+W.~K. Hastings.
+\newblock Monte {C}arlo sampling methods using {M}arkov chains and their
+  applications.
+\newblock \emph{Biometrika}, 57\penalty0 (1):\penalty0 97--109, 1970.
+
+\bibitem[Wu et~al.(2023)Wu, Zou, Wu, and Zhang]{wu2023}
+S.~Wu, Y.~Zou, L.~Wu, and Y.~Zhang.
+\newblock Application of {B}ayesian model averaging for modeling time headway
+  distribution.
+\newblock \emph{Physica A: Statistical Mechanics and its Applications},
+  620:\penalty0 128747, 2023.
+\newblock \doi{10.1016/j.physa.2023.128747}.
+
+\bibitem[Cox(1962)]{cox1962}
+D.~R. Cox.
+\newblock \emph{Renewal Theory}.
+\newblock Methuen, London, 1962.
+
+\bibitem[Ross(1996)]{ross1996}
+Sheldon~M. Ross.
+\newblock \emph{Stochastic Processes}.
+\newblock John Wiley \& Sons, 2 edition, 1996.
+
+\bibitem[Norris(1997)]{norris1997}
+J.~R. Norris.
+\newblock \emph{Markov Chains}.
+\newblock Cambridge University Press, 1997.
+
+\bibitem[Chen et~al.(2010)Chen, Li, and Zhang]{chen2010}
+X.~Chen, L.~Li, and Y.~Zhang.
+\newblock A {M}arkov model for headway/spacing distribution of road traffic.
+\newblock \emph{IEEE Transactions on Intelligent Transportation Systems},
+  11\penalty0 (4):\penalty0 773--785, 2010.
+\newblock \doi{10.1109/TITS.2010.2050141}.
+
+\bibitem[Krajewski et~al.(2018)Krajewski, Bock, Kloeker, and
+  Eckstein]{krajewski2018}
+R.~Krajewski, J.~Bock, L.~Kloeker, and L.~Eckstein.
+\newblock The {highD} dataset: A drone dataset of naturalistic vehicle
+  trajectories on {G}erman highways for validation of highly automated driving
+  systems.
+\newblock In \emph{2018 21st International Conference on Intelligent
+  Transportation Systems (ITSC)}, 2018.
+
+\bibitem[{U.S. Department of Transportation, Federal Highway
+  Administration}(2017)]{ngsim}
+{U.S. Department of Transportation, Federal Highway Administration}.
+\newblock Next generation simulation ({NGSIM}) vehicle trajectories and
+  supporting data.
+\newblock
+  \url{https://catalog.data.gov/dataset/next-generation-simulation-ngsim-vehicle-trajectories-and-supporting-data},
+  2017.
+
+\bibitem[Roberts et~al.(1997)Roberts, Gelman, and Gilks]{roberts1997}
+G.~O. Roberts, A.~Gelman, and W.~R. Gilks.
+\newblock Weak convergence and optimal scaling of random walk {M}etropolis
+  algorithms.
+\newblock \emph{The Annals of Applied Probability}, 7\penalty0 (1):\penalty0
+  110--120, 1997.
+
+\bibitem[Vehtari et~al.(2021)Vehtari, Gelman, Simpson, Carpenter, and
+  B{\"u}rkner]{vehtari2021}
+Aki Vehtari, Andrew Gelman, Daniel Simpson, Bob Carpenter, and Paul-Christian
+  B{\"u}rkner.
+\newblock Rank-normalization, folding, and localization: An improved $\hat{R}$
+  for assessing convergence of {MCMC}.
+\newblock \emph{Bayesian Analysis}, 16\penalty0 (2):\penalty0 667--718, 2021.
+
+\end{thebibliography}

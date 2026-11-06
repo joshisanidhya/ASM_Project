@@ -1,0 +1,350 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\providecommand\HyField@AuxAddToFields[1]{}
+\providecommand\HyField@AuxAddToCoFields[2]{}
+\citation{li2017survey,may1990,treiber2013}
+\citation{li2017survey,leungbootnak}
+\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{1}{section.1}\protected@file@percent }
+\newlabel{sec:intro}{{1}{1}{Introduction}{section.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.1}Background and motivation}{1}{subsection.1.1}\protected@file@percent }
+\citation{leungbootnak}
+\citation{leungbootnak}
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.2}Why headway modelling matters}{2}{subsection.1.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.3}Research objectives}{2}{subsection.1.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.4}Research contributions}{2}{subsection.1.4}\protected@file@percent }
+\citation{adams1936}
+\citation{adams1936,may1990,cox1962}
+\citation{leungbootnak}
+\citation{li2017survey}
+\citation{greenberg1966}
+\citation{dawson1968}
+\citation{buckley1968}
+\citation{leungbootnak}
+\citation{cowan1975}
+\citation{hcm2000}
+\citation{leungbootnak}
+\citation{greenberg1966}
+\citation{johnson1995}
+\citation{dawson1968}
+\citation{cowan1975}
+\citation{li2021access}
+\citation{leungbootnak}
+\citation{roysaha2017}
+\citation{wang2022}
+\citation{wu2023}
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.5}Organisation of the paper}{3}{subsection.1.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {2}Literature Review}{3}{section.2}\protected@file@percent }
+\newlabel{sec:lit}{{2}{3}{Literature Review}{section.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Historical development of traffic headway modelling}{3}{subsection.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Classical probability distributions for headway modelling}{3}{subsection.2.2}\protected@file@percent }
+\citation{hoogendoorn1998}
+\citation{ye2009}
+\citation{chen2010}
+\citation{zou2014}
+\citation{panichpapiboon2015,roysaha2017,maurya2016}
+\citation{leungbootnak}
+\citation{taieb2001}
+\citation{mahmassani2016}
+\citation{wen2022}
+\citation{hu2022}
+\citation{leungbootnak}
+\citation{gelman2013}
+\citation{metropolis1953,hastings1970}
+\citation{roberts1997}
+\citation{haario2001}
+\citation{gelman1992,vehtari2021}
+\citation{wu2023}
+\citation{leungbootnak}
+\citation{cox1962,ross1996}
+\citation{leungbootnak}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}Traffic heterogeneity and driver behaviour}{4}{subsection.2.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.4}Bayesian estimation in traffic modelling}{4}{subsection.2.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.5}Renewal processes in traffic flow}{4}{subsection.2.5}\protected@file@percent }
+\citation{norris1997}
+\citation{chen2010}
+\citation{leungbootnak}
+\citation{krajewski2018}
+\citation{ngsim}
+\citation{leungbootnak}
+\citation{montanino2015}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.6}Markov chains in traffic regime modelling}{5}{subsection.2.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.7}Research gap and motivation}{5}{subsection.2.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3}Dataset Description and Preprocessing}{5}{section.3}\protected@file@percent }
+\newlabel{sec:data}{{3}{5}{Dataset Description and Preprocessing}{section.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}The highD dataset}{5}{subsection.3.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}The NGSIM dataset}{5}{subsection.3.2}\protected@file@percent }
+\citation{leungbootnak}
+\citation{taieb2001}
+\citation{krajewski2018}
+\citation{ngsim}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}Sampling, filtering and headway extraction}{6}{subsection.3.3}\protected@file@percent }
+\newlabel{sec:sampling}{{3.3}{6}{Sampling, filtering and headway extraction}{subsection.3.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.4}Dataset selection rationale}{6}{subsection.3.4}\protected@file@percent }
+\newlabel{sec:selection}{{3.4}{6}{Dataset selection rationale}{subsection.3.4}{}}
+\citation{leungbootnak}
+\citation{leungbootnak}
+\citation{leungbootnak}
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Characteristics of the two datasets and of the headway samples used. Headways are in seconds; Std is the standard deviation. A trajectory run is a stretch of consecutive one-second samples of one follower (Section~\ref {sec:sampling}).}}{7}{table.caption.1}\protected@file@percent }
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{tab:data}{{1}{7}{Characteristics of the two datasets and of the headway samples used. Headways are in seconds; Std is the standard deviation. A trajectory run is a stretch of consecutive one-second samples of one follower (Section~\ref {sec:sampling})}{table.caption.1}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4}Mathematical Background}{7}{section.4}\protected@file@percent }
+\newlabel{sec:math}{{4}{7}{Mathematical Background}{section.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Probability distributions and truncation}{7}{subsection.4.1}\protected@file@percent }
+\newlabel{eq:trunc}{{4.1}{7}{Probability distributions and truncation}{equation.4.1}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces The seven distributions and the priors of~\cite  {leungbootnak}. $\mathcal  N(m,s)$ has mean $m$ and standard deviation $s$; $\Gamma (k,r)$ has shape $k$ and rate $r$; $t_{\min }$ is the smallest observed headway.}}{7}{table.caption.2}\protected@file@percent }
+\newlabel{tab:dists}{{2}{7}{The seven distributions and the priors of~\cite {leungbootnak}. $\mathcal N(m,s)$ has mean $m$ and standard deviation $s$; $\Gamma (k,r)$ has shape $k$ and rate $r$; $t_{\min }$ is the smallest observed headway}{table.caption.2}{}}
+\citation{metropolis1953,hastings1970}
+\citation{roberts1997}
+\citation{gelman1992,gelman2013,vehtari2021}
+\citation{vehtari2021}
+\citation{cox1962,ross1996}
+\citation{norris1997}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Bayesian inference and the Metropolis--Hastings algorithm}{8}{subsection.4.2}\protected@file@percent }
+\newlabel{eq:posterior}{{4.2}{8}{Bayesian inference and the Metropolis--Hastings algorithm}{equation.4.2}{}}
+\newlabel{eq:accept}{{4.3}{8}{Bayesian inference and the Metropolis--Hastings algorithm}{equation.4.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Convergence diagnostics}{8}{subsection.4.3}\protected@file@percent }
+\newlabel{eq:rhat}{{4.4}{8}{Convergence diagnostics}{equation.4.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.4}Renewal processes and the Poisson process}{8}{subsection.4.4}\protected@file@percent }
+\newlabel{eq:renewal}{{4.5}{8}{Renewal processes and the Poisson process}{equation.4.5}{}}
+\newlabel{eq:dispersion}{{4.6}{8}{Renewal processes and the Poisson process}{equation.4.6}{}}
+\citation{leungbootnak}
+\citation{massey1951}
+\citation{pearson1900}
+\citation{kullback1951}
+\citation{vallender1974}
+\citation{leungbootnak}
+\citation{leungbootnak}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.5}Finite-state Markov chains}{9}{subsection.4.5}\protected@file@percent }
+\newlabel{eq:ck}{{4.7}{9}{Finite-state Markov chains}{equation.4.7}{}}
+\newlabel{eq:stationary}{{4.8}{9}{Finite-state Markov chains}{equation.4.8}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.6}Goodness-of-fit metrics}{9}{subsection.4.6}\protected@file@percent }
+\newlabel{sec:metrics}{{4.6}{9}{Goodness-of-fit metrics}{subsection.4.6}{}}
+\newlabel{eq:ks}{{4.9}{9}{Goodness-of-fit metrics}{equation.4.9}{}}
+\newlabel{eq:chi}{{4.10}{9}{Goodness-of-fit metrics}{equation.4.10}{}}
+\newlabel{eq:kl}{{4.11}{9}{Goodness-of-fit metrics}{equation.4.11}{}}
+\newlabel{eq:wvec}{{4.12}{9}{Goodness-of-fit metrics}{equation.4.12}{}}
+\newlabel{eq:wtime}{{4.13}{9}{Goodness-of-fit metrics}{equation.4.13}{}}
+\citation{leungbootnak}
+\citation{leungbootnak}
+\@writefile{toc}{\contentsline {section}{\numberline {5}Proposed Stochastic Modelling Framework}{10}{section.5}\protected@file@percent }
+\newlabel{sec:framework}{{5}{10}{Proposed Stochastic Modelling Framework}{section.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}Terminology}{10}{subsection.5.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Terminology used in this paper.}}{10}{table.caption.3}\protected@file@percent }
+\newlabel{tab:terms}{{3}{10}{Terminology used in this paper}{table.caption.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}Bayesian headway distribution model}{10}{subsection.5.2}\protected@file@percent }
+\newlabel{sec:proposed}{{5.2}{10}{Bayesian headway distribution model}{subsection.5.2}{}}
+\newlabel{eq:density}{{5.1}{10}{Bayesian headway distribution model}{equation.5.1}{}}
+\newlabel{eq:norm}{{5.2}{10}{Bayesian headway distribution model}{equation.5.2}{}}
+\newlabel{eq:cdf}{{5.3}{10}{Bayesian headway distribution model}{equation.5.3}{}}
+\newlabel{eq:sampler}{{5.4}{10}{Bayesian headway distribution model}{equation.5.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.3}Renewal arrival process}{11}{subsection.5.3}\protected@file@percent }
+\newlabel{sec:renewal}{{5.3}{11}{Renewal arrival process}{subsection.5.3}{}}
+\@writefile{toc}{\contentsline {paragraph}{Definition.}{11}{section*.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{What this model assumes.}{11}{section*.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.4}Markov chain for traffic regimes}{11}{subsection.5.4}\protected@file@percent }
+\newlabel{sec:markov}{{5.4}{11}{Markov chain for traffic regimes}{subsection.5.4}{}}
+\@writefile{toc}{\contentsline {paragraph}{State space and time.}{11}{section*.6}\protected@file@percent }
+\newlabel{eq:regimes}{{5.5}{11}{State space and time}{equation.5.5}{}}
+\@writefile{toc}{\contentsline {paragraph}{Estimation and quantities.}{11}{section*.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6}Methodology}{11}{section.6}\protected@file@percent }
+\newlabel{sec:method}{{6}{11}{Methodology}{section.6}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.1}Overall research workflow}{11}{subsection.6.1}\protected@file@percent }
+\citation{leungbootnak}
+\citation{leungbootnak}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Workflow of the study.}}{12}{figure.caption.8}\protected@file@percent }
+\newlabel{fig:workflow}{{1}{12}{Workflow of the study}{figure.caption.8}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.2}Data acquisition and preprocessing}{12}{subsection.6.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.3}Headway distribution selection}{12}{subsection.6.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.4}Bayesian parameter estimation}{12}{subsection.6.4}\protected@file@percent }
+\newlabel{sec:bayes}{{6.4}{12}{Bayesian parameter estimation}{subsection.6.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.5}Metropolis--Hastings sampling procedure}{13}{subsection.6.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.6}Goodness-of-fit evaluation}{13}{subsection.6.6}\protected@file@percent }
+\newlabel{sec:gofmethod}{{6.6}{13}{Goodness-of-fit evaluation}{subsection.6.6}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.7}Renewal process construction}{13}{subsection.6.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.8}Markov chain construction}{13}{subsection.6.8}\protected@file@percent }
+\newlabel{sec:markovmethod}{{6.8}{13}{Markov chain construction}{subsection.6.8}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.9}Simulation design}{13}{subsection.6.9}\protected@file@percent }
+\newlabel{sec:simdesign}{{6.9}{13}{Simulation design}{subsection.6.9}{}}
+\@writefile{toc}{\contentsline {paragraph}{Renewal paths.}{13}{section*.9}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Fitted-model sampling.}{14}{section*.10}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.10}Detector inter-arrival times and count dispersion}{14}{subsection.6.10}\protected@file@percent }
+\newlabel{sec:detmethod}{{6.10}{14}{Detector inter-arrival times and count dispersion}{subsection.6.10}{}}
+\newlabel{eq:crossing}{{6.1}{14}{Detector inter-arrival times and count dispersion}{equation.6.1}{}}
+\newlabel{eq:window}{{6.2}{14}{Detector inter-arrival times and count dispersion}{equation.6.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.11}Statistical validation strategy}{14}{subsection.6.11}\protected@file@percent }
+\newlabel{sec:valstrat}{{6.11}{14}{Statistical validation strategy}{subsection.6.11}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.12}Computational implementation}{15}{subsection.6.12}\protected@file@percent }
+\newlabel{sec:impl}{{6.12}{15}{Computational implementation}{subsection.6.12}{}}
+\@writefile{toc}{\contentsline {paragraph}{Parallel processing.}{15}{section*.11}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Automated result generation.}{15}{section*.12}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Testing.}{15}{section*.13}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Reproducibility.}{15}{section*.14}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7}Results and Discussion}{16}{section.7}\protected@file@percent }
+\newlabel{sec:results}{{7}{16}{Results and Discussion}{section.7}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.1}Simulation results}{16}{subsection.7.1}\protected@file@percent }
+\newlabel{sec:sim}{{7.1}{16}{Simulation results}{subsection.7.1}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {7.1.1}Renewal arrival process}{16}{subsubsection.7.1.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces Simulated renewal counts (2\,000 paths) against renewal theory, Eq.~\eqref  {eq:renewal}. ``Var if Poisson'' is the variance of a Poisson process of the same rate $1/\mu $; errors are relative to theory. $\mathbb  {E}N$: expected count; $\operatorname  {Var}N$: variance of the count.}}{16}{table.caption.16}\protected@file@percent }
+\newlabel{tab:renewal}{{4}{16}{Simulated renewal counts (2\,000 paths) against renewal theory, Eq.~\eqref {eq:renewal}. ``Var if Poisson'' is the variance of a Poisson process of the same rate $1/\mu $; errors are relative to theory. $\E N$: expected count; $\Var N$: variance of the count}{table.caption.16}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {7.1.2}Regime Markov chain}{16}{subsubsection.7.1.2}\protected@file@percent }
+\newlabel{sec:markovres}{{7.1.2}{16}{Regime Markov chain}{subsubsection.7.1.2}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Five simulated sample paths of the vehicle arrival count $N(t)$ (cumulative vehicles, $t$ in seconds) of the headway-driven renewal process, and the theoretical renewal function $m(t)$ (dashed).}}{17}{figure.caption.15}\protected@file@percent }
+\newlabel{fig:paths}{{2}{17}{Five simulated sample paths of the vehicle arrival count $N(t)$ (cumulative vehicles, $t$ in seconds) of the headway-driven renewal process, and the theoretical renewal function $m(t)$ (dashed)}{figure.caption.15}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Distribution of the arrival count $N(60\text  { s})$: simulated renewal paths (bars), the renewal-theory normal approximation with continuity correction (red) and a Poisson process of the same rate (blue).}}{18}{figure.caption.17}\protected@file@percent }
+\newlabel{fig:counts}{{3}{18}{Distribution of the arrival count $N(60\text { s})$: simulated renewal paths (bars), the renewal-theory normal approximation with continuity correction (red) and a Poisson process of the same rate (blue)}{figure.caption.17}{}}
+\citation{leungbootnak}
+\@writefile{lot}{\contentsline {table}{\numberline {5}{\ignorespaces Estimated transition matrix $P$ (rows: current regime, columns: next regime, one-second steps), stationary distribution $\pi $ and mean recurrence times $1/\pi _i$ (s). C: close following, P: stable platoon, F: free flow.}}{19}{table.caption.18}\protected@file@percent }
+\newlabel{tab:markov}{{5}{19}{Estimated transition matrix $P$ (rows: current regime, columns: next regime, one-second steps), stationary distribution $\pi $ and mean recurrence times $1/\pi _i$ (s). C: close following, P: stable platoon, F: free flow}{table.caption.18}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces State-transition diagrams of the regime Markov chains. Arrow labels are transition probabilities $p_{ij}$ per second; ``stay'' is $p_{ii}$.}}{19}{figure.caption.19}\protected@file@percent }
+\newlabel{fig:diagram}{{4}{19}{State-transition diagrams of the regime Markov chains. Arrow labels are transition probabilities $p_{ij}$ per second; ``stay'' is $p_{ii}$}{figure.caption.19}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.2}Real data results}{19}{subsection.7.2}\protected@file@percent }
+\newlabel{sec:real}{{7.2}{19}{Real data results}{subsection.7.2}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {7.2.1}Descriptive statistics}{19}{subsubsection.7.2.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Transient regime probabilities $\pi (n)=\pi (0)P^n$ from close following ($n$ in seconds), with the stationary distributions (dashed).}}{20}{figure.caption.20}\protected@file@percent }
+\newlabel{fig:stateprob}{{5}{20}{Transient regime probabilities $\pi (n)=\pi (0)P^n$ from close following ($n$ in seconds), with the stationary distributions (dashed)}{figure.caption.20}{}}
+\citation{leungbootnak}
+\citation{leungbootnak}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {7.2.2}Posterior parameter estimates}{21}{subsubsection.7.2.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {6}{\ignorespaces highD: posterior-mean parameters under the corrected (truncated) likelihood, the paper's likelihood, and as published in~\cite  {leungbootnak}. Parameter names are those of Table~\ref {tab:dists}. Under the truncated likelihood the shifted-exponential threshold $\gamma $ is not identified (its posterior is its prior).}}{21}{table.caption.21}\protected@file@percent }
+\newlabel{tab:params_hd}{{6}{21}{highD: posterior-mean parameters under the corrected (truncated) likelihood, the paper's likelihood, and as published in~\cite {leungbootnak}. Parameter names are those of Table~\ref {tab:dists}. Under the truncated likelihood the shifted-exponential threshold $\gamma $ is not identified (its posterior is its prior)}{table.caption.21}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {7}{\ignorespaces NGSIM (I-80, first period): posterior-mean parameters, as in Table~\ref {tab:params_hd}. The corrected shifted log-normal threshold $\gamma $ lies at its upper bound $\alpha =0.5$~s; published values of $\gamma $ above 0.5 are not attainable with our smallest observed headway of 0.5~s.}}{22}{table.caption.22}\protected@file@percent }
+\newlabel{tab:params_ng}{{7}{22}{NGSIM (I-80, first period): posterior-mean parameters, as in Table~\ref {tab:params_hd}. The corrected shifted log-normal threshold $\gamma $ lies at its upper bound $\alpha =0.5$~s; published values of $\gamma $ above 0.5 are not attainable with our smallest observed headway of 0.5~s}{table.caption.22}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {8}{\ignorespaces Posterior summary of the proposed distribution (corrected likelihood): mean, standard deviation, 95\% equal-tailed credible interval, split $\hat  R$ and effective sample size (ESS) from 2 chains $\times $ 5\,000 draws.}}{22}{table.caption.23}\protected@file@percent }
+\newlabel{tab:post}{{8}{22}{Posterior summary of the proposed distribution (corrected likelihood): mean, standard deviation, 95\% equal-tailed credible interval, split $\hat R$ and effective sample size (ESS) from 2 chains $\times $ 5\,000 draws}{table.caption.23}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {7.2.3}Goodness of fit}{22}{subsubsection.7.2.3}\protected@file@percent }
+\newlabel{sec:gof}{{7.2.3}{22}{Goodness of fit}{subsubsection.7.2.3}{}}
+\citation{leungbootnak}
+\citation{leungbootnak}
+\citation{leungbootnak}
+\citation{leungbootnak}
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Observed headway histogram (bars; frequency per 0.5~s bin) with the seven fitted distributions (corrected likelihood); curves show the expected count per bin of the window-conditioned model.}}{23}{figure.caption.24}\protected@file@percent }
+\newlabel{fig:fits}{{6}{23}{Observed headway histogram (bars; frequency per 0.5~s bin) with the seven fitted distributions (corrected likelihood); curves show the expected count per bin of the window-conditioned model}{figure.caption.24}{}}
+\citation{leungbootnak}
+\citation{leungbootnak}
+\@writefile{lot}{\contentsline {table}{\numberline {9}{\ignorespaces Kullback--Leibler divergence $D_{KL}$ (unitless, lower is better; best of each of our columns in bold). ``Corrected'': window-conditioned likelihood; ``Paper'': the likelihood of~\cite  {leungbootnak}; ``Published'': Table~5 of~\cite  {leungbootnak}.}}{24}{table.caption.25}\protected@file@percent }
+\newlabel{tab:kl}{{9}{24}{Kullback--Leibler divergence $D_{KL}$ (unitless, lower is better; best of each of our columns in bold). ``Corrected'': window-conditioned likelihood; ``Paper'': the likelihood of~\cite {leungbootnak}; ``Published'': Table~5 of~\cite {leungbootnak}}{table.caption.25}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {10}{\ignorespaces Wasserstein distance $W_{\mathrm  {vec}}$ of sorted bin-probability vectors, Eq.~\eqref  {eq:wvec} (unitless; lower is better; best of each of our columns in bold), with the same columns as Table~\ref {tab:kl}. This is the reading of Eq.~17 of~\cite  {leungbootnak} whose scale matches the published values.}}{24}{table.caption.26}\protected@file@percent }
+\newlabel{tab:wvec}{{10}{24}{Wasserstein distance $\Wvec $ of sorted bin-probability vectors, Eq.~\eqref {eq:wvec} (unitless; lower is better; best of each of our columns in bold), with the same columns as Table~\ref {tab:kl}. This is the reading of Eq.~17 of~\cite {leungbootnak} whose scale matches the published values}{table.caption.26}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {11}{\ignorespaces Conventional one-dimensional Wasserstein distance $W_{\mathrm  {time}}$ on the time axis, Eq.~\eqref  {eq:wtime}, in seconds (lower is better; best of each column in bold), for the corrected and the paper-likelihood fits. The published study does not report this quantity.}}{24}{table.caption.27}\protected@file@percent }
+\newlabel{tab:wtime}{{11}{24}{Conventional one-dimensional Wasserstein distance $\Wtime $ on the time axis, Eq.~\eqref {eq:wtime}, in seconds (lower is better; best of each column in bold), for the corrected and the paper-likelihood fits. The published study does not report this quantity}{table.caption.27}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {12}{\ignorespaces Goodness-of-fit tests of the corrected fits. KS $D_1$: one-sample statistic against the fitted distribution; KS $D_2$ and $p_2$: two-sample statistic against a simulated sample of $\min (n,50\,000)$ draws and its $p$-value; $p_\chi $: chi-square $p$-value. A value below $10^{-300}$ is printed as such.}}{25}{table.caption.28}\protected@file@percent }
+\newlabel{tab:tests}{{12}{25}{Goodness-of-fit tests of the corrected fits. KS $D_1$: one-sample statistic against the fitted distribution; KS $D_2$ and $p_2$: two-sample statistic against a simulated sample of $\min (n,50\,000)$ draws and its $p$-value; $p_\chi $: chi-square $p$-value. A value below $10^{-300}$ is printed as such}{table.caption.28}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {7.2.4}highD against NGSIM}{25}{subsubsection.7.2.4}\protected@file@percent }
+\newlabel{sec:disc}{{7.2.4}{25}{highD against NGSIM}{subsubsection.7.2.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.3}Model validation}{25}{subsection.7.3}\protected@file@percent }
+\newlabel{sec:valid}{{7.3}{25}{Model validation}{subsection.7.3}{}}
+\citation{roberts1997}
+\@writefile{lot}{\contentsline {table}{\numberline {13}{\ignorespaces Summary of verification and validation by level.}}{26}{table.caption.29}\protected@file@percent }
+\newlabel{tab:verif}{{13}{26}{Summary of verification and validation by level}{table.caption.29}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {7.3.1}MCMC convergence}{26}{subsubsection.7.3.1}\protected@file@percent }
+\newlabel{sec:conv}{{7.3.1}{26}{MCMC convergence}{subsubsection.7.3.1}{}}
+\@writefile{toc}{\contentsline {paragraph}{The earlier non-convergence of the shifted exponential on highD.}{26}{section*.30}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {14}{\ignorespaces MCMC convergence of the real-data fits: largest split $\hat  R$ over the parameters under the corrected (``Trunc.'') and paper (``Paper'') likelihood, smallest effective sample size (ESS) and mean acceptance rate of the corrected run. Two chains with 5\,000 post-warmup draws each.}}{27}{table.caption.31}\protected@file@percent }
+\newlabel{tab:diag}{{14}{27}{MCMC convergence of the real-data fits: largest split $\hat R$ over the parameters under the corrected (``Trunc.'') and paper (``Paper'') likelihood, smallest effective sample size (ESS) and mean acceptance rate of the corrected run. Two chains with 5\,000 post-warmup draws each}{table.caption.31}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {7.3.2}Truncation and the likelihood}{27}{subsubsection.7.3.2}\protected@file@percent }
+\newlabel{sec:lik}{{7.3.2}{27}{Truncation and the likelihood}{subsubsection.7.3.2}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {7.3.3}Independence of successive headways}{27}{subsubsection.7.3.3}\protected@file@percent }
+\newlabel{sec:indep}{{7.3.3}{27}{Independence of successive headways}{subsubsection.7.3.3}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces Posterior distributions of the parameters $a$ (s) and $b$ of the proposed distribution (corrected likelihood).}}{28}{figure.caption.32}\protected@file@percent }
+\newlabel{fig:post}{{7}{28}{Posterior distributions of the parameters $a$ (s) and $b$ of the proposed distribution (corrected likelihood)}{figure.caption.32}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces Trace plots of the two chains for the proposed distribution over all 10\,000 iterations; the shaded part is warmup.}}{29}{figure.caption.33}\protected@file@percent }
+\newlabel{fig:trace}{{8}{29}{Trace plots of the two chains for the proposed distribution over all 10\,000 iterations; the shaded part is warmup}{figure.caption.33}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {15}{\ignorespaces Autocorrelation at lags 1--5 of the one-second time headways within trajectory runs (``Headways'') and of the detector inter-arrival times of Section~\ref {sec:detector} (``Detector gaps''; lag in vehicles), with the half-width of the 95\% white-noise band.}}{30}{table.caption.34}\protected@file@percent }
+\newlabel{tab:autocorr}{{15}{30}{Autocorrelation at lags 1--5 of the one-second time headways within trajectory runs (``Headways'') and of the detector inter-arrival times of Section~\ref {sec:detector} (``Detector gaps''; lag in vehicles), with the half-width of the 95\% white-noise band}{table.caption.34}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {7.3.4}Detector inter-arrival times: testing the renewal model}{30}{subsubsection.7.3.4}\protected@file@percent }
+\newlabel{sec:detector}{{7.3.4}{30}{Detector inter-arrival times: testing the renewal model}{subsubsection.7.3.4}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {16}{\ignorespaces Detector inter-arrival times reconstructed from the trajectories (all gaps, no window applied). Std: standard deviation; CV$^2$: squared coefficient of variation of the pooled gaps (pooling lanes and recordings with different flows inflates it); Flow: $3600/$mean gap; the last two columns are the shares of gaps below 0.5~s and above 25~s.}}{30}{table.caption.35}\protected@file@percent }
+\newlabel{tab:detgaps}{{16}{30}{Detector inter-arrival times reconstructed from the trajectories (all gaps, no window applied). Std: standard deviation; CV$^2$: squared coefficient of variation of the pooled gaps (pooling lanes and recordings with different flows inflates it); Flow: $3600/$mean gap; the last two columns are the shares of gaps below 0.5~s and above 25~s}{table.caption.35}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {17}{\ignorespaces Index of dispersion (variance/mean) of vehicle counts in consecutive windows of $w$ seconds at the virtual detector: observed, renewal prediction $\sigma _u^2/\mu _u^2$ from the same series' gaps (series-wise, window-weighted average), and Poisson. Mean count: average vehicles per window per lane.}}{31}{table.caption.36}\protected@file@percent }
+\newlabel{tab:detcounts}{{17}{31}{Index of dispersion (variance/mean) of vehicle counts in consecutive windows of $w$ seconds at the virtual detector: observed, renewal prediction $\sigma _u^2/\mu _u^2$ from the same series' gaps (series-wise, window-weighted average), and Poisson. Mean count: average vehicles per window per lane}{table.caption.36}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {7.3.5}Markov chain}{31}{subsubsection.7.3.5}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {9}{\ignorespaces Detector inter-arrival times. (a) density of the gaps (s) with the exponential law of the same mean; (b) autocorrelation of the gaps at lags 1--5 (vehicles) and of the 1\,Hz time headways within trajectory runs (seconds), with the 95\% white-noise band of the gaps.}}{32}{figure.caption.37}\protected@file@percent }
+\newlabel{fig:detector}{{9}{32}{Detector inter-arrival times. (a) density of the gaps (s) with the exponential law of the same mean; (b) autocorrelation of the gaps at lags 1--5 (vehicles) and of the 1\,Hz time headways within trajectory runs (seconds), with the 95\% white-noise band of the gaps}{figure.caption.37}{}}
+\citation{leungbootnak}
+\@writefile{lot}{\contentsline {table}{\numberline {18}{\ignorespaces Validation of the first-order regime Markov chain on within-run sequences. TV: total-variation distance; $G^2$: likelihood-ratio statistic of first against second order.}}{33}{table.caption.38}\protected@file@percent }
+\newlabel{tab:markovval}{{18}{33}{Validation of the first-order regime Markov chain on within-run sequences. TV: total-variation distance; $G^2$: likelihood-ratio statistic of first against second order}{table.caption.38}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {7.3.6}Comparison with the published results}{33}{subsubsection.7.3.6}\protected@file@percent }
+\newlabel{sec:published}{{7.3.6}{33}{Comparison with the published results}{subsubsection.7.3.6}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.4}Overall discussion and traffic interpretation}{33}{subsection.7.4}\protected@file@percent }
+\newlabel{sec:overall}{{7.4}{33}{Overall discussion and traffic interpretation}{subsection.7.4}{}}
+\@writefile{toc}{\contentsline {paragraph}{Traffic regimes.}{33}{section*.39}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Arrivals: regular, or nearly Poisson?}{34}{section*.40}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Which distribution?}{34}{section*.41}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{What the results do not show.}{34}{section*.42}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {8}Limitations and Future Work}{34}{section.8}\protected@file@percent }
+\newlabel{sec:limits}{{8}{34}{Limitations and Future Work}{section.8}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.1}Limitations of the present study}{34}{subsection.8.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.2}Future work}{35}{subsection.8.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {9}Conclusion}{35}{section.9}\protected@file@percent }
+\newlabel{sec:conclusion}{{9}{35}{Conclusion}{section.9}{}}
+\bibstyle{unsrtnat}
+\bibdata{references}
+\bibcite{li2017survey}{{1}{2017}{{Li and Chen}}{{}}}
+\bibcite{may1990}{{2}{1990}{{May}}{{}}}
+\bibcite{treiber2013}{{3}{2013}{{Treiber and Kesting}}{{}}}
+\bibcite{leungbootnak}{{4}{n.d.}{{Leungbootnak et~al.}}{{Leungbootnak, Li, Wei, Lord, and Zhang}}}
+\bibcite{adams1936}{{5}{1936}{{Adams}}{{}}}
+\bibcite{cox1962}{{6}{1962}{{Cox}}{{}}}
+\bibcite{greenberg1966}{{7}{1966}{{Greenberg}}{{}}}
+\bibcite{dawson1968}{{8}{1968}{{Dawson and Chimini}}{{}}}
+\bibcite{buckley1968}{{9}{1968}{{Buckley}}{{}}}
+\bibcite{cowan1975}{{10}{1975}{{Cowan}}{{}}}
+\bibcite{hcm2000}{{11}{2001}{{Transportation Research Board}}{{}}}
+\bibcite{johnson1995}{{12}{1995}{{Johnson et~al.}}{{Johnson, Kotz, and Balakrishnan}}}
+\bibcite{li2021access}{{13}{2021}{{Li et~al.}}{{Li, Zhou, Xing, Zhang, and Zhang}}}
+\bibcite{roysaha2017}{{14}{2017}{{Roy and Saha}}{{}}}
+\bibcite{wang2022}{{15}{2022}{{Wang et~al.}}{{Wang, Wang, Liu, and Wu}}}
+\bibcite{wu2023}{{16}{2023}{{Wu et~al.}}{{Wu, Zou, Wu, and Zhang}}}
+\bibcite{hoogendoorn1998}{{17}{1998}{{Hoogendoorn and Bovy}}{{}}}
+\bibcite{ye2009}{{18}{2009}{{Ye and Zhang}}{{}}}
+\bibcite{chen2010}{{19}{2010}{{Chen et~al.}}{{Chen, Li, and Zhang}}}
+\bibcite{zou2014}{{20}{2014}{{Zou et~al.}}{{Zou, Zhang, and Zhu}}}
+\bibcite{panichpapiboon2015}{{21}{2015}{{Panichpapiboon}}{{}}}
+\bibcite{maurya2016}{{22}{2016}{{Maurya et~al.}}{{Maurya, Das, Dey, and Nama}}}
+\bibcite{taieb2001}{{23}{2001}{{Taieb-Maimon and Shinar}}{{}}}
+\bibcite{mahmassani2016}{{24}{2016}{{Mahmassani}}{{}}}
+\bibcite{wen2022}{{25}{2022}{{Wen et~al.}}{{Wen, Cui, and Jian}}}
+\bibcite{hu2022}{{26}{2022}{{Hu et~al.}}{{Hu, Zheng, Chen, Zhang, and Sun}}}
+\bibcite{gelman2013}{{27}{2013}{{Gelman et~al.}}{{Gelman, Carlin, Stern, Dunson, Vehtari, and Rubin}}}
+\bibcite{metropolis1953}{{28}{1953}{{Metropolis et~al.}}{{Metropolis, Rosenbluth, Rosenbluth, Teller, and Teller}}}
+\bibcite{hastings1970}{{29}{1970}{{Hastings}}{{}}}
+\bibcite{roberts1997}{{30}{1997}{{Roberts et~al.}}{{Roberts, Gelman, and Gilks}}}
+\bibcite{haario2001}{{31}{2001}{{Haario et~al.}}{{Haario, Saksman, and Tamminen}}}
+\bibcite{gelman1992}{{32}{1992}{{Gelman and Rubin}}{{}}}
+\bibcite{vehtari2021}{{33}{2021}{{Vehtari et~al.}}{{Vehtari, Gelman, Simpson, Carpenter, and B{\"u}rkner}}}
+\bibcite{ross1996}{{34}{1996}{{Ross}}{{}}}
+\bibcite{norris1997}{{35}{1997}{{Norris}}{{}}}
+\bibcite{krajewski2018}{{36}{2018}{{Krajewski et~al.}}{{Krajewski, Bock, Kloeker, and Eckstein}}}
+\bibcite{ngsim}{{37}{2017}{{U.S. Department of Transportation, Federal Highway Administration}}{{}}}
+\bibcite{montanino2015}{{38}{2015}{{Montanino and Punzo}}{{}}}
+\bibcite{massey1951}{{39}{1951}{{Massey}}{{}}}
+\bibcite{pearson1900}{{40}{1900}{{Pearson}}{{}}}
+\bibcite{kullback1951}{{41}{1951}{{Kullback and Leibler}}{{}}}
+\bibcite{vallender1974}{{42}{1974}{{Vallender}}{{}}}
+\@writefile{toc}{\contentsline {section}{\numberline {A}Source Code}{39}{appendix.A}\protected@file@percent }
+\newlabel{app:code}{{A}{39}{Source Code}{appendix.A}{}}
+\newlabel{lst:pdf}{{1}{39}{Density of the proposed headway distribution, normalised on $[\alpha ,\infty )$ (\texttt {distributions.py})}{lstlisting.1}{}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {1}{\ignorespaces Density of the proposed headway distribution, normalised on $[\alpha ,\infty )$ (\texttt  {distributions.py}).}}{39}{lstlisting.1}\protected@file@percent }
+\newlabel{lst:cdf}{{2}{39}{Distribution function of the proposed distribution, Eq.~\eqref {eq:cdf} (\texttt {distributions.py})}{lstlisting.2}{}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {2}{\ignorespaces Distribution function of the proposed distribution, Eq.~\eqref  {eq:cdf} (\texttt  {distributions.py}).}}{39}{lstlisting.2}\protected@file@percent }
+\newlabel{lst:logpost}{{3}{39}{Binned log-posterior used by the sampler; \texttt {likelihood} selects the paper's or the truncated likelihood (\texttt {fit.py})}{lstlisting.3}{}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {3}{\ignorespaces Binned log-posterior used by the sampler; \texttt  {likelihood} selects the paper's or the truncated likelihood (\texttt  {fit.py}).}}{39}{lstlisting.3}\protected@file@percent }
+\newlabel{lst:mh}{{4}{40}{Adaptive random-walk Metropolis--Hastings sampler (\texttt {mcmc.py})}{lstlisting.4}{}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {4}{\ignorespaces Adaptive random-walk Metropolis--Hastings sampler (\texttt  {mcmc.py}).}}{40}{lstlisting.4}\protected@file@percent }
+\newlabel{lst:chain}{{5}{41}{One MCMC chain, including the log-gap coordinates for the shifted exponential (\texttt {fit.py})}{lstlisting.5}{}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {5}{\ignorespaces One MCMC chain, including the log-gap coordinates for the shifted exponential (\texttt  {fit.py}).}}{41}{lstlisting.5}\protected@file@percent }
+\newlabel{lst:segments}{{6}{42}{Trajectory runs: consecutive seconds of one vehicle (\texttt {datasets/common.py})}{lstlisting.6}{}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {6}{\ignorespaces Trajectory runs: consecutive seconds of one vehicle (\texttt  {datasets/common.py}).}}{42}{lstlisting.6}\protected@file@percent }
+\newlabel{lst:markov}{{7}{42}{Markov transition estimation from within-run pairs only (\texttt {stochastic\_process.py})}{lstlisting.7}{}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {7}{\ignorespaces Markov transition estimation from within-run pairs only (\texttt  {stochastic\_process.py}).}}{42}{lstlisting.7}\protected@file@percent }
+\newlabel{lst:renewal}{{8}{42}{Simulation of the renewal counting process $N(t)$ (\texttt {validation.py})}{lstlisting.8}{}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {8}{\ignorespaces Simulation of the renewal counting process $N(t)$ (\texttt  {validation.py}).}}{42}{lstlisting.8}\protected@file@percent }
+\newlabel{lst:rv}{{9}{43}{Simulated moments of $N(t)$ against renewal theory (\texttt {validation.py})}{lstlisting.9}{}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {9}{\ignorespaces Simulated moments of $N(t)$ against renewal theory (\texttt  {validation.py}).}}{43}{lstlisting.9}\protected@file@percent }
+\newlabel{lst:mv}{{10}{43}{Chapman--Kolmogorov, stationarity and first- against second-order checks (\texttt {validation.py})}{lstlisting.10}{}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {10}{\ignorespaces Chapman--Kolmogorov, stationarity and first- against second-order checks (\texttt  {validation.py}).}}{43}{lstlisting.10}\protected@file@percent }
+\newlabel{lst:crossing}{{11}{44}{Virtual-detector crossing times by linear interpolation, Eq.~\eqref {eq:crossing} (\texttt {detector.py})}{lstlisting.11}{}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {11}{\ignorespaces Virtual-detector crossing times by linear interpolation, Eq.~\eqref  {eq:crossing} (\texttt  {detector.py}).}}{44}{lstlisting.11}\protected@file@percent }
+\newlabel{lst:window}{{12}{45}{Count dispersion in fixed windows against renewal and Poisson theory (\texttt {detector.py})}{lstlisting.12}{}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {12}{\ignorespaces Count dispersion in fixed windows against renewal and Poisson theory (\texttt  {detector.py}).}}{45}{lstlisting.12}\protected@file@percent }
+\gdef \@abspage@last{45}

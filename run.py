@@ -228,7 +228,7 @@ def run_dataset_pipeline(name: str, path: Optional[Path], args: argparse.Namespa
 
     # Compute transient evolution from close-following state [1.0, 0.0, 0.0]
     mc = TrafficRegimeMarkovChain(mc_results.transition_matrix)
-    transient_traj = mc.transient_distribution([1.0, 0.0, 0.0], steps=20)
+    transient_traj = mc.transient_distribution([1.0, 0.0, 0.0], steps=60)
 
     # Save stochastic process figures
     plot_arrival_process_sample_paths(

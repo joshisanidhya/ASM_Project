@@ -38,7 +38,7 @@ def plot_fitted_distributions(
     figsize: Tuple[float, float] = (10, 6),
 ) -> None:
     """Plot empirical headway frequency histogram with fitted distributions overlaid (paper Figure 5)."""
-    fig, ax = plt.subplots(figsize=(10, 6))
+    fig, ax = plt.subplots(figsize=(7.5, 4.6))
     n = float(counts.sum())
 
     # Empirical histogram
@@ -86,7 +86,7 @@ def plot_empirical_cdf(
     path: Union[str, Path],
 ) -> None:
     """Plot empirical cumulative distribution against theoretical model CDFs."""
-    fig, ax = plt.subplots(figsize=(10, 6))
+    fig, ax = plt.subplots(figsize=(7.5, 4.6))
     sorted_data = np.sort(data)
     emp_cdf = np.arange(1, len(sorted_data) + 1) / len(sorted_data)
 
@@ -132,7 +132,7 @@ def plot_traces(
     full_draws shape: (chains, n_iter, n_params)
     """
     c, n_iter, d = full_draws.shape
-    fig, axes = plt.subplots(d, 1, figsize=(10, 2.5 * d), squeeze=False)
+    fig, axes = plt.subplots(d, 1, figsize=(7.5, 2.1 * d), squeeze=False)
 
     for j, p in enumerate(param_names):
         ax = axes[j, 0]
@@ -173,7 +173,7 @@ def plot_posteriors(
     post_draws shape: (chains, n_post, n_params)
     """
     c, n, d = post_draws.shape
-    fig, axes = plt.subplots(1, d, figsize=(4.5 * d, 4.0), squeeze=False)
+    fig, axes = plt.subplots(1, d, figsize=(3.6 * d, 3.4), squeeze=False)
     flat = post_draws.reshape(-1, d)
 
     for j, p in enumerate(param_names):
@@ -275,7 +275,7 @@ def plot_arrival_process_sample_paths(
     path: Union[str, Path],
 ) -> None:
     """Plot multiple stochastic sample paths of vehicle arrivals N(t) over time (ASM Course Page 4)."""
-    fig, ax = plt.subplots(figsize=(10, 6))
+    fig, ax = plt.subplots(figsize=(7.5, 4.6))
     n_paths = path_counts.shape[0]
 
     # Plot individual stochastic sample paths
@@ -355,7 +355,7 @@ def plot_markov_state_probabilities_vs_time(
     path: Union[str, Path],
 ) -> None:
     """Plot transient state probabilities pi_i(n) converging to the stationary distribution (ASM Course Page 4)."""
-    fig, ax = plt.subplots(figsize=(10, 5.5))
+    fig, ax = plt.subplots(figsize=(7.5, 4.2))
     steps = trajectory.shape[0]
     x_steps = np.arange(steps)
 
@@ -366,9 +366,9 @@ def plot_markov_state_probabilities_vs_time(
             trajectory[:, i],
             color=colors[i],
             lw=2.0,
-            marker="o",
+            marker="o" if steps <= 30 else None,
             markersize=4,
-            label=fr"$\pi_{{{name}}}(n)$",
+            label=rf"{name}: $\pi_i(n)$",
         )
         # Stationary asymptote
         ax.axhline(
@@ -377,15 +377,15 @@ def plot_markov_state_probabilities_vs_time(
             linestyle="--",
             lw=1.3,
             alpha=0.7,
-            label=fr"Stationary $\pi_{{{name}}} = {stationary_dist[i]:.3f}$",
+            label=rf"{name}: stationary $\pi_i = {stationary_dist[i]:.3f}$",
         )
 
     ax.set_title(fr"{title} — Markov Transient State Probabilities vs. Steps", fontsize=13, fontweight="bold", pad=10)
-    ax.set_xlabel("Transition Step $n$ (Successive Vehicles)", fontsize=11)
+    ax.set_xlabel("Step $n$ (seconds along one vehicle's trajectory)", fontsize=11)
     ax.set_ylabel(r"State Probability $\mathbb{P}(X_n = i)$", fontsize=11)
     ax.set_ylim(-0.02, 1.02)
     ax.grid(True, linestyle=":", alpha=0.5)
-    ax.legend(loc="right", frameon=True, fontsize=9)
+    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.2), ncol=2, frameon=False, fontsize=8)
     fig.tight_layout()
 
     Path(path).parent.mkdir(parents=True, exist_ok=True)
@@ -448,7 +448,7 @@ def plot_event_count_distribution(
 
     k = np.arange(counts.min() - 3, counts.max() + 4)
     sd = np.sqrt(var_theory)
-    fig, ax = plt.subplots(figsize=(9, 5))
+    fig, ax = plt.subplots(figsize=(7.2, 4.2))
     ax.bar(k, np.bincount(counts - k[0], minlength=len(k))[:len(k)] / len(counts), width=0.85,
            color="#BBBBBB", edgecolor="#777777", label=f"Simulated renewal paths (n={len(counts):,})")
     ax.plot(k, norm.cdf((k + 0.5 - mean_theory) / sd) - norm.cdf((k - 0.5 - mean_theory) / sd),

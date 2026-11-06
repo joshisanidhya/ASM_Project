@@ -1,0 +1,12 @@
+﻿python : E:\Sanidhya\ASM_data\ASM_Project\headway\detector.py:152: RuntimeWarning: Degrees of freedom <= 0 for slice
+At line:4 char:1
++ python -m headway.detector --highd data/highd --ngsim data/ngsim/expo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (E:\Sanidhya\ASM... <= 0 for slice:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  rows.append((n_win, c.mean(), c.var(ddof=1), gp.var(ddof=1) / gp.mean() ** 2, window / gp.mean()))
+C:\Users\sanidhya\AppData\Local\Programs\Python\Python313\Lib\site-packages\numpy\_core\_methods.py:211: 
+RuntimeWarning: invalid value encountered in scalar divide
+  ret = ret.dtype.type(ret / rcount)
+wrote detector analysis to outputs\detector/
