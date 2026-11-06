@@ -7,9 +7,6 @@ dependencies = ["numpy", "pandas", "scipy", "matplotlib"]
 
 [dependency-groups]
 dev = ["pytest"]
-report = [
-    "pypandoc-binary>=1.17",
-]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]

@@ -68,8 +68,13 @@ class TrafficRegimeMarkovChain:
         self.P = np.where(row_sums > 0, P / row_sums, np.eye(3))
 
     @classmethod
-    def from_headways(cls, headways: np.ndarray) -> "TrafficRegimeMarkovChain":
-        """Construct Markov Chain from consecutive empirical or simulated headway observations."""
+    def from_headways(cls, headways: np.ndarray, groups: Optional[np.ndarray] = None) -> "TrafficRegimeMarkovChain":
+        """Construct Markov Chain from consecutive empirical or simulated headway observations.
+
+        `groups` are trajectory-run ids (datasets.common.segment_ids). Given them, a transition is
+        counted only between two samples of the same run, i.e. consecutive seconds of one vehicle.
+        Without them every adjacent pair counts, which is right only for a single trajectory.
+        """
         h = np.asarray(headways, dtype=float)
         # Discretize into 3 physical car-following regimes
         # 0: Close-Following [0.5, 1.5), 1: Stable Platoon [1.5, 4.0), 2: Free-Flow [4.0, inf)
@@ -78,9 +83,8 @@ class TrafficRegimeMarkovChain:
 
         # Count 1-step transitions
         n_states = 3
-        counts = np.zeros((n_states, n_states), dtype=float)
-        for i in range(len(states) - 1):
-            counts[states[i], states[i + 1]] += 1.0
+        ok = np.ones(len(states) - 1, dtype=bool) if groups is None else (np.asarray(groups)[:-1] == np.asarray(groups)[1:])
+        counts = np.bincount((states[:-1] * 3 + states[1:])[ok], minlength=9).reshape(3, 3).astype(float)
 
         # Regularize zero rows with uniform transitions
         row_sums = counts.sum(axis=1, keepdims=True)
@@ -244,10 +248,14 @@ def analyze_stochastic_processes(
     n_sample_paths: int = 5,
     t_simulation: float = 300.0,
     seed: int = 42,
+    groups: Optional[np.ndarray] = None,
 ) -> Tuple[MarkovChainResults, RenewalProcessResults]:
-    """Execute complete stochastic process analysis (Markov Chain + Renewal Process)."""
+    """Execute complete stochastic process analysis (Markov Chain + Renewal Process).
+
+    `groups`: trajectory-run id of each headway (see TrafficRegimeMarkovChain.from_headways).
+    """
     # 1. Markov Chain Analysis
-    mc = TrafficRegimeMarkovChain.from_headways(headways)
+    mc = TrafficRegimeMarkovChain.from_headways(headways, groups)
     P = mc.P
     stat_dist = mc.stationary_distribution()
     rec_times = mc.mean_recurrence_times()

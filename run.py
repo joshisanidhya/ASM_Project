@@ -75,9 +75,10 @@ def run_dataset_pipeline(name: str, path: Optional[Path], args: argparse.Namespa
         kw = {}
         if name == "ngsim":
             kw = {"location": args.location, "lanes": args.lanes, "period": args.period}
-        data = LOADERS[name](path, workers=args.workers, **kw)
+        data, groups = LOADERS[name](path, workers=args.workers, return_groups=True, **kw)
         source_desc = f"raw file ({path})"
     else:
+        groups = None  # synthetic i.i.d. draws: one sequence
         if args.real_only:
             raise SystemExit(f"[{name}] no raw data under {args.data_dir}/{name}/ and --real-only is set.")
         print(f"[{name}] Raw dataset not found on disk. Generating synthetic benchmark sample...")
@@ -100,6 +101,10 @@ def run_dataset_pipeline(name: str, path: Optional[Path], args: argparse.Namespa
         "ngsim_location": args.location if name == "ngsim" else "",
         "ngsim_period": (args.period or "all") if name == "ngsim" else "",
         "ngsim_lanes": ("all" if not args.lanes else ",".join(map(str, args.lanes))) if name == "ngsim" else "",
+        "likelihood": args.likelihood,
+        # trajectory runs: stretches of consecutive seconds of one follower (what Markov transitions use)
+        "n_runs": int(groups.max()) + 1 if groups is not None and len(groups) else 1,
+        "n_transitions": int((groups[:-1] == groups[1:]).sum()) if groups is not None else len(data) - 1,
     }]).to_csv(out_dir / "dataset_info.csv", index=False)
 
     # 2. Parameter Estimation: MCMC
@@ -118,6 +123,7 @@ def run_dataset_pipeline(name: str, path: Optional[Path], args: argparse.Namespa
             seed=args.seed,
             names=[dname],
             workers=args.workers,
+            likelihood=args.likelihood,
         )[dname]
         mcmc_runtimes[dname] = time.perf_counter() - t0_d
         fits[dname] = fit_res
@@ -172,7 +178,7 @@ def run_dataset_pipeline(name: str, path: Optional[Path], args: argparse.Namespa
         plot_posteriors(f"{name.upper()} — {dname}", pnames, draws, fig_dir / f"posterior_{slug}.png")
 
         flag = " [OK]" if is_converged else " [NOT CONVERGED]"
-        print(f"  {dname:22s} | KL={m['kl']:.4f} | W={m['wasserstein']:.4f} | max R-hat={np.nanmax(rhat):.3f} | acc={avg_acc:.2%}{flag}")
+        print(f"  {dname:22s} | KL={m['kl']:.4f} | W={m['wasserstein']:.4f} | W_time={m['wasserstein_time']:.4f}s | max R-hat={np.nanmax(rhat):.3f} | acc={avg_acc:.2%}{flag}")
 
     # Plot proposed trace and posterior under default names
     if "Proposed" in fits:
@@ -217,6 +223,7 @@ def run_dataset_pipeline(name: str, path: Optional[Path], args: argparse.Namespa
         n_sample_paths=args.sample_paths,
         t_simulation=args.sim_time,
         seed=args.seed,
+        groups=groups,
     )
 
     # Compute transient evolution from close-following state [1.0, 0.0, 0.0]
@@ -259,8 +266,8 @@ def run_dataset_pipeline(name: str, path: Optional[Path], args: argparse.Namespa
     times = (30, 60, 120, 300)
     renewal_df, sim_counts = renewal_validation(data, times=times, seed=args.seed)
     renewal_df.to_csv(out_dir / "validation_renewal.csv", index=False)
-    independence_check(data).to_csv(out_dir / "validation_independence.csv", index=False)
-    mv = markov_validation(data, seed=args.seed)
+    independence_check(data, groups=groups).to_csv(out_dir / "validation_independence.csv", index=False)
+    mv = markov_validation(data, seed=args.seed, groups=groups)
     pd.DataFrame([mv]).to_csv(out_dir / "validation_markov.csv", index=False)
 
     j = times.index(60)
@@ -283,12 +290,12 @@ def run_dataset_pipeline(name: str, path: Optional[Path], args: argparse.Namespa
 
     # 8. Save Standardized Output CSVs
     res_df = pd.DataFrame(metric_rows).set_index("distribution")
-    stat_cols = ["ks_D", "ks_p", "ks_2samp_D", "ks_2samp_p", "chi2", "chi2_dof", "chi2_p", "kl", "wasserstein"]
+    stat_cols = ["ks_D", "ks_p", "ks_2samp_D", "ks_2samp_p", "chi2", "chi2_dof", "chi2_p", "kl", "wasserstein", "wasserstein_time"]
     param_cols = [c for c in res_df.columns if c not in stat_cols]
 
     res_df[param_cols].to_csv(out_dir / "params.csv")
     res_df[["ks_D", "ks_p", "ks_2samp_D", "ks_2samp_p", "chi2", "chi2_dof", "chi2_p"]].to_csv(out_dir / "tests.csv")
-    res_df[["kl", "wasserstein"]].to_csv(out_dir / "metrics.csv")
+    res_df[["kl", "wasserstein", "wasserstein_time"]].to_csv(out_dir / "metrics.csv")
     pd.DataFrame(posterior_rows).to_csv(out_dir / "posterior.csv", index=False)
     pd.DataFrame(diagnostics_rows).to_csv(out_dir / "diagnostics.csv", index=False)
 
@@ -308,6 +315,9 @@ def main():
     parser.add_argument("--data-dir", default="data", help="Root directory holding dataset folders")
     parser.add_argument("--path", help="Explicit path overriding data-dir for a single dataset")
     parser.add_argument("--location", default="i-80", help="Location filter for NGSIM (default 'i-80')")
+    parser.add_argument("--likelihood", choices=["paper", "truncated"], default="paper",
+                        help="'paper': the paper's un-truncated density (default, reproduces its tables); "
+                             "'truncated': conditional on the observed [0.5, 25] s window")
     parser.add_argument("--real-only", action="store_true",
                         help="fail if a dataset's raw files are missing instead of using synthetic data")
     parser.add_argument("--lanes", type=lambda s: [int(x) for x in s.split(",")],

@@ -7,9 +7,9 @@ from headway.datasets.highd import load_highd
 def _write_highd(folder, rec):
     pd.DataFrame({"frameRate": [25]}).to_csv(folder / f"{rec}_recordingMeta.csv", index=False)
     frames = np.arange(1, 101)
-    follower = pd.DataFrame({"frame": frames, "precedingId": 2, "thw": 2.0})
-    leaderless = pd.DataFrame({"frame": frames, "precedingId": 0, "thw": 0.0})
-    tooshort = pd.DataFrame({"frame": [25, 50], "precedingId": 2, "thw": [0.3, 30.0]})  # both out of range
+    follower = pd.DataFrame({"frame": frames, "id": 1, "precedingId": 2, "thw": 2.0})
+    leaderless = pd.DataFrame({"frame": frames, "id": 2, "precedingId": 0, "thw": 0.0})
+    tooshort = pd.DataFrame({"frame": [25, 50], "id": 3, "precedingId": 2, "thw": [0.3, 30.0]})  # both out of range
     pd.concat([follower, leaderless, tooshort]).to_csv(folder / f"{rec}_tracks.csv", index=False)
 
 

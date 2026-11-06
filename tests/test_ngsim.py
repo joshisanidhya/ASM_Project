@@ -29,3 +29,13 @@ def test_ngsim_period_splits_on_time_gaps(tmp_path):
     assert load_ngsim(p, period=2).tolist() == [3.0, 3.5]
     assert load_ngsim(p, period=3).tolist() == [4.0]
     assert len(load_ngsim(p)) == 5
+
+
+def test_ngsim_headways_are_ordered_by_vehicle_then_time(tmp_path):
+    # the raw export is not in this order; the Markov / independence checks need it
+    rows = [  # Vehicle_ID, Frame_ID, Time_Headway: file order interleaves two vehicles by frame
+        (2, 10, 20.0), (1, 10, 1.0), (2, 20, 21.0), (1, 20, 2.0), (2, 30, 22.0), (1, 30, 3.0)]
+    p = tmp_path / "e.csv"
+    p.write_text("Vehicle_ID,Frame_ID,Preceding,Time_Headway,Location\n"
+                 + "\n".join(f"{v},{f},9,{h},i-80" for v, f, h in rows))
+    assert load_ngsim(p).tolist() == [1.0, 2.0, 3.0, 20.0, 21.0, 22.0]

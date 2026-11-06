@@ -6,9 +6,10 @@ Three questions, each answered with numbers and not by eye:
 2. Is the renewal assumption (independent headways) reasonable?       -> independence_check
 3. Is the regime Markov chain a good model of the regime sequence?    -> markov_validation
 
-All of them take the headways in the order the loader returns them. For highD and NGSIM that is
-file order, i.e. consecutive 1 Hz samples of one follower, with an occasional jump to the next
-vehicle at a vehicle boundary (a few percent of the transitions, not removed).
+The sequence checks (2 and 3) take the headways in loader order plus `groups`, the trajectory-run id
+of each sample (headway.datasets.common.segment_ids). Only pairs and triples of samples inside one
+run, i.e. consecutive seconds of one follower, are used; without `groups` the whole array is treated
+as a single sequence, which is only correct for data that really is one.
 """
 from typing import Dict, Sequence, Tuple
 
@@ -71,22 +72,38 @@ def renewal_validation(headways: np.ndarray, times: Sequence[float] = (30, 60, 1
 
 
 # --- 2. is the renewal (independent headways) assumption reasonable? --------------------------
-def independence_check(headways: np.ndarray, max_lag: int = 5) -> pd.DataFrame:
+def _same_run(groups, n: int, lag: int) -> np.ndarray:
+    """True for the index pairs (i, i + lag) that lie in one trajectory run (all pairs if groups is None)."""
+    if groups is None:
+        return np.ones(n - lag, dtype=bool)
+    g = np.asarray(groups)
+    return g[:-lag] == g[lag:]
+
+
+def independence_check(headways: np.ndarray, max_lag: int = 5, groups=None) -> pd.DataFrame:
     """Autocorrelation of the headway sequence at lags 1..max_lag against the white-noise band.
 
-    For independent headways r_k ~ N(0, 1/n), so |r_k| > 1.96 / sqrt(n) is significant.
+    With `groups` (trajectory-run ids) only pairs of samples inside one run enter, so the
+    correlation is that between a follower's headway now and k seconds later, not across vehicles.
+    The mean and variance are those of the whole sample. For independent headways
+    r_k ~ N(0, 1/m) with m the number of pairs, so |r_k| > 1.96 / sqrt(m) is significant.
     """
     x = np.asarray(headways, float)
     x = x - x.mean()
-    denom = (x ** 2).sum()
-    band = 1.96 / np.sqrt(len(x))
-    return pd.DataFrame([{"lag": k, "autocorr": float((x[:-k] * x[k:]).sum() / denom),
-                          "band95": band} for k in range(1, max_lag + 1)])
+    var = (x ** 2).mean()
+    rows = []
+    for k in range(1, max_lag + 1):
+        ok = _same_run(groups, len(x), k)
+        m = int(ok.sum())
+        rows.append({"lag": k, "autocorr": float((x[:-k][ok] * x[k:][ok]).sum() / (m * var)) if m else float("nan"),
+                     "band95": 1.96 / np.sqrt(m) if m else float("nan"), "n_pairs": m})
+    return pd.DataFrame(rows)
 
 
 # --- 3. Markov chain validation --------------------------------------------------------------
-def _transition_counts(s: np.ndarray, lag: int = 1) -> np.ndarray:
-    return np.bincount(s[:-lag] * 3 + s[lag:], minlength=9).reshape(3, 3).astype(float)
+def _transition_counts(s: np.ndarray, lag: int = 1, groups=None) -> np.ndarray:
+    ok = _same_run(groups, len(s), lag)
+    return np.bincount(s[:-lag][ok] * 3 + s[lag:][ok], minlength=9).reshape(3, 3).astype(float)
 
 
 def _row_normalise(c: np.ndarray) -> np.ndarray:
@@ -94,7 +111,7 @@ def _row_normalise(c: np.ndarray) -> np.ndarray:
     return np.where(r > 0, c / np.maximum(r, 1), np.eye(3))
 
 
-def markov_validation(headways: np.ndarray, n_sim: int = 200_000, seed: int = 0) -> Dict[str, float]:
+def markov_validation(headways: np.ndarray, n_sim: int = 200_000, seed: int = 0, groups=None) -> Dict[str, float]:
     """Does a first-order, time-homogeneous 3-state chain describe the regime sequence?
 
     * chapman_kolmogorov_n: max |empirical n-step matrix - P^n|   (exact for a Markov chain)
@@ -105,11 +122,11 @@ def markov_validation(headways: np.ndarray, n_sim: int = 200_000, seed: int = 0)
       test rejects for tiny effects, so read the effect size too.
     """
     s = regime_states(headways)
-    P = _row_normalise(_transition_counts(s))
-    out: Dict[str, float] = {"n_transitions": float(len(s) - 1)}
+    P = _row_normalise(_transition_counts(s, 1, groups))
+    out: Dict[str, float] = {"n_transitions": float(_transition_counts(s, 1, groups).sum())}
 
     for n in (2, 3, 5):
-        diff = np.abs(_row_normalise(_transition_counts(s, n)) - np.linalg.matrix_power(P, n))
+        diff = np.abs(_row_normalise(_transition_counts(s, n, groups)) - np.linalg.matrix_power(P, n))
         out[f"chapman_kolmogorov_{n}_max_err"] = float(diff.max())
 
     A = np.vstack([P.T - np.eye(3), np.ones(3)])
@@ -128,7 +145,8 @@ def markov_validation(headways: np.ndarray, n_sim: int = 200_000, seed: int = 0)
     out["sim_occupation_tv_distance"] = float(0.5 * np.abs(np.bincount(sim, minlength=3) / n_sim - pi).sum())
     out["sim_P_reestimate_max_err"] = float(np.abs(_row_normalise(_transition_counts(sim)) - P).max())
 
-    n3 = np.bincount(s[:-2] * 9 + s[1:-1] * 3 + s[2:], minlength=27).reshape(3, 3, 3).astype(float)
+    ok3 = _same_run(groups, len(s), 2)  # (i, i+2) in one run implies i+1 is too: runs are consecutive seconds
+    n3 = np.bincount((s[:-2] * 9 + s[1:-1] * 3 + s[2:])[ok3], minlength=27).reshape(3, 3, 3).astype(float)
     n_ij, n_jk, n_j = n3.sum(2), n3.sum(0), n3.sum((0, 2))
     with np.errstate(divide="ignore", invalid="ignore"):
         g2 = 2 * np.nansum(np.where(n3 > 0, n3 * np.log(n3 * n_j[None, :, None]

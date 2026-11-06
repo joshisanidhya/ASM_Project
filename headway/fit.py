@@ -8,7 +8,7 @@ Paper settings:
 - Parameter estimate = mean of all retained posterior draws
 - Random walk Metropolis-Hastings
 """
-from collections import namedtuple
+from dataclasses import replace
 from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
@@ -34,12 +34,44 @@ class FitResult(tuple):
         return inst
 
 
-def make_logpost(dist: Dist, counts: np.ndarray, tmin: float) -> Callable[[Sequence[float]], float]:
+LIKELIHOODS = ("paper", "truncated")
+
+# The shifted exponential's threshold gamma enters the binned likelihood linearly and is bounded
+# above by min(t) (the prior is U(-10, min t)), so its posterior is a thin ridge pressed against
+# that bound. A random walk in (lambda, gamma) cannot traverse it: split R-hat was 2 to 35 on
+# highD-sized data and did not improve with 16x longer chains. Sampling v = log(min t - gamma)
+# instead, with the exact Jacobian, removes the problem (R-hat <= 1.007). Value: index of gamma.
+GAP_PARAM = {"Shifted Exponential": 1}
+
+
+def _to_z(theta, i: int, tmin: float) -> np.ndarray:
+    z = np.array(theta, dtype=float)
+    z[..., i] = np.log(np.maximum(tmin - z[..., i], 1e-12))
+    return z
+
+
+def _from_z(z, i: int, tmin: float) -> np.ndarray:
+    theta = np.array(z, dtype=float)
+    theta[..., i] = tmin - np.exp(theta[..., i])
+    return theta
+
+
+def make_logpost(dist: Dist, counts: np.ndarray, tmin: float, likelihood: str = "paper") -> Callable[[Sequence[float]], float]:
     """Construct the binned multinomial log-posterior function.
 
     ln p(theta | counts) = ln p(theta) + sum_{k=1}^49 O_k ln(p_k(theta))
     where p_k(theta) is the model probability in bin k.
+
+    likelihood="paper" uses the distribution's own (un-truncated) density, as the paper does, so
+    the bin probabilities sum to less than one. likelihood="truncated" conditions on the observed
+    window [0.5, 25] s (they sum to one), which is the exact likelihood for a sample that was
+    truncated to that window. Under it the shifted exponential's threshold is not identifiable
+    (the conditional law does not depend on it) and its posterior is just the prior.
     """
+    if likelihood not in LIKELIHOODS:
+        raise ValueError(f"likelihood must be one of {LIKELIHOODS}")
+    bin_probs = dist.raw_bin_probs if likelihood == "paper" else dist.bin_probs
+
     def logpost(theta: Sequence[float]) -> float:
         lp = dist.logprior(theta, tmin)
         if not np.isfinite(lp):
@@ -47,7 +79,7 @@ def make_logpost(dist: Dist, counts: np.ndarray, tmin: float) -> Callable[[Seque
         if not dist.check_params(theta):
             return -np.inf
         with np.errstate(all="ignore"):
-            p = dist.raw_bin_probs(theta)
+            p = bin_probs(theta)
         if not np.all(np.isfinite(p)) or np.any(p < 0.0) or p.sum() <= 0.0:
             return -np.inf
         # Multinomial log-likelihood over the 49 bins
@@ -57,11 +89,11 @@ def make_logpost(dist: Dist, counts: np.ndarray, tmin: float) -> Callable[[Seque
     return logpost
 
 
-def _map_start(task: Tuple[str, np.ndarray, float]) -> np.ndarray:
+def _map_start(task: Tuple[str, np.ndarray, float, str]) -> np.ndarray:
     """Find Maximum A Posteriori (MAP) estimate via Nelder-Mead to initialize MCMC."""
-    name, counts, tmin = task
+    name, counts, tmin, likelihood = task
     dist = DISTS[name]
-    logpost = make_logpost(dist, counts, tmin)
+    logpost = make_logpost(dist, counts, tmin, likelihood)
     total_counts = float(counts.sum())
     cdf = np.cumsum(counts) / total_counts
     median = float(CENTERS[np.searchsorted(cdf, 0.5)])
@@ -78,14 +110,23 @@ def _map_start(task: Tuple[str, np.ndarray, float]) -> np.ndarray:
         method="Nelder-Mead",
         options={"xatol": 1e-6, "fatol": 1e-6, "maxiter": 5000},
     )
-    return res.x if res.success and np.isfinite(logpost(res.x)) else np.array(init_guess, dtype=float)
+    x = res.x if res.success and np.isfinite(logpost(res.x)) else np.array(init_guess, dtype=float)
+    i = GAP_PARAM.get(name)
+    if i is not None:  # polish in the well-scaled coordinates: the plain simplex stalls on the ridge
+        zn = lambda z: nll(_from_z(z, i, tmin))
+        z = minimize(zn, _to_z(x, i, tmin), method="Nelder-Mead",
+                     options={"xatol": 1e-10, "fatol": 1e-9, "maxiter": 20000}).x
+        polished = _from_z(z, i, tmin)
+        if np.isfinite(logpost(polished)) and logpost(polished) >= logpost(x):
+            x = polished
+    return x
 
 
-def _chain(task: Tuple[str, np.ndarray, float, np.ndarray, int, int, int, int]) -> ChainOutput:
+def _chain(task: Tuple[str, np.ndarray, float, np.ndarray, int, int, int, int, str]) -> ChainOutput:
     """Worker task executing one independent MCMC chain."""
-    name, counts, tmin, x0, chain_idx, n_iter, n_warmup, seed = task
+    name, counts, tmin, x0, chain_idx, n_iter, n_warmup, seed, likelihood = task
     dist = DISTS[name]
-    logpost = make_logpost(dist, counts, tmin)
+    logpost = make_logpost(dist, counts, tmin, likelihood)
     rng = np.random.default_rng([seed, chain_idx, 100])
 
     # Chain 0 starts at MAP; Chain 1+ starts slightly perturbed to verify convergence
@@ -96,7 +137,15 @@ def _chain(task: Tuple[str, np.ndarray, float, np.ndarray, int, int, int, int]) 
         if np.isfinite(logpost(perturbed_start)):
             start = perturbed_start
 
-    return metropolis(logpost, start, n_iter=n_iter, n_warmup=n_warmup, rng=rng)
+    i = GAP_PARAM.get(name)
+    if i is None:
+        return metropolis(logpost, start, n_iter=n_iter, n_warmup=n_warmup, rng=rng)
+
+    # Sample v = log(min t - gamma); log p(v) = log p(gamma) + v is the exact change of variables.
+    logpost_z = lambda z: logpost(_from_z(z, i, tmin)) + z[i]
+    out = metropolis(logpost_z, _to_z(start, i, tmin), n_iter=n_iter, n_warmup=n_warmup, rng=rng)
+    return replace(out, draws=_from_z(out.draws, i, tmin), warmup=_from_z(out.warmup, i, tmin),
+                   full_draws=_from_z(out.full_draws, i, tmin))
 
 
 def fit_all(
@@ -108,6 +157,7 @@ def fit_all(
     seed: int = 42,
     names: Optional[Sequence[str]] = None,
     workers: Optional[int] = None,
+    likelihood: str = "paper",
 ) -> Dict[str, FitResult]:
     """Fit all specified distributions via parallel MCMC.
 
@@ -120,15 +170,17 @@ def fit_all(
         seed: Random seed for reproducibility.
         names: Distribution names to fit (defaults to all 7).
         workers: Number of parallel worker processes.
+        likelihood: "paper" (the paper's un-truncated density) or "truncated" (conditional on the
+            observed window); see make_logpost.
 
     Returns:
         Dict mapping distribution name to FitResult(theta, draws, full_draws, acceptance_rates).
     """
     names = list(names or DISTS.keys())
-    x0s = pmap(_map_start, [(n, counts, tmin) for n in names], workers)
+    x0s = pmap(_map_start, [(n, counts, tmin, likelihood) for n in names], workers)
 
     tasks = [
-        (n, counts, tmin, x0, c, n_iter, n_warmup, seed)
+        (n, counts, tmin, x0, c, n_iter, n_warmup, seed, likelihood)
         for n, x0 in zip(names, x0s)
         for c in range(chains)
     ]

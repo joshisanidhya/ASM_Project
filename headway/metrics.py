@@ -7,9 +7,9 @@
 from typing import Any, Dict, Optional, Sequence, Tuple
 
 import numpy as np
-from scipy.stats import chi2, ks_2samp, kstest
+from scipy.stats import chi2, ks_2samp, kstest, wasserstein_distance
 
-from .distributions import ALPHA, T_MAX, Dist
+from .distributions import ALPHA, CENTERS, T_MAX, Dist
 
 _GRID = np.linspace(ALPHA, T_MAX, 50_001)
 
@@ -73,6 +73,7 @@ def evaluate(
         kl: KL divergence D_KL(P_obs || P_model) over the 49 bins
         wasserstein: Eq. 17 with p=1, on the same scale as the paper's Table 5 (no unit: it
             compares bin probabilities, not times). See the note where it is computed.
+        wasserstein_time: conventional W1 along the time axis, in seconds.
     """
     n = float(counts.sum())
     p_model = dist.bin_probs(theta)
@@ -115,6 +116,10 @@ def evaluate(
     # in seconds and is ~100x larger. It ignores where each bin sits on the time axis.
     w_dist = float(np.mean(np.abs(np.sort(p_obs) - np.sort(p_model))))
 
+    # 6. Conventional time-axis Wasserstein-1 (seconds): the two binned distributions placed at the
+    # bin centres. Reported next to the unitless value because the paper does not define Eq. 17's X, Y.
+    w_time = float(wasserstein_distance(CENTERS, CENTERS, p_obs, p_model))
+
     return {
         "ks_D": ks_D,
         "ks_p": ks_p,
@@ -125,4 +130,5 @@ def evaluate(
         "chi2_p": chi_p,
         "kl": kl,
         "wasserstein": w_dist,
+        "wasserstein_time": w_time,
     }
