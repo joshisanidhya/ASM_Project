@@ -6,7 +6,7 @@ import sys
 import tempfile
 import webbrowser
 
-from headway.animation import Walkthrough, export_html
+from headway.animation import Walkthrough, export_html, export_downloads
 from headway.distributions import DISTS
 
 
@@ -18,10 +18,21 @@ def main():
     parser.add_argument("--out", type=Path, help="HTML destination (default: <results>/animations/<dataset>.html)")
     parser.add_argument("--demo", action="store_true", help="Run a synthetic pipeline in outputs/animation_demo; never reads raw data")
     parser.add_argument("--open", action="store_true", help="Open the finished HTML in your browser")
+    parser.add_argument("--gif", action="store_true", help="Also create a looping GIF and embed its download in the HTML")
+    parser.add_argument("--export-existing", type=Path, metavar="HTML", help="Add GIF export/downloads to an existing animation without rendering again")
     parser.add_argument("--frames-per-stage", type=int, default=16, help="2..60; default 16 (each stage lasts 4 seconds)")
     args = parser.parse_args()
     if not 2 <= args.frames_per_stage <= 60:
         parser.error("--frames-per-stage must be between 2 and 60")
+    if args.export_existing:
+        try:
+            gif = export_downloads(args.export_existing)
+        except (OSError, ValueError, KeyError, IndexError) as exc:
+            parser.exit(1, f"Could not export this animation: {exc}\n")
+        print(f"GIF saved: {gif.resolve()}\nDownload buttons added: {args.export_existing.resolve()}")
+        if args.open:
+            webbrowser.open(args.export_existing.resolve().as_uri())
+        return
     if args.demo:
         args.results = Path("outputs/animation_demo").resolve()
         # A new empty directory guarantees the demo cannot discover real datasets.
@@ -33,6 +44,8 @@ def main():
         walkthrough = Walkthrough(args.results, args.dataset, args.model)
         destination = args.out or args.results / "animations" / f"{args.dataset}.html"
         path = export_html(walkthrough, destination, args.frames_per_stage)
+        if args.gif:
+            print(f"GIF saved: {export_downloads(path).resolve()}")
     except (OSError, ValueError, KeyError) as exc:
         parser.exit(1, f"Animation could not be built: {exc}\nUse complete outputs from run.py, or try --demo.\n")
     print(f"Animation saved: {path.resolve()} ({path.stat().st_size / 1024**2:.1f} MB)")

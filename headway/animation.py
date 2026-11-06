@@ -10,6 +10,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from PIL import Image
 
 from .distributions import ALPHA, CENTERS, DISTS, EDGES, T_MAX
 from .simulation import sample_distribution
@@ -366,3 +367,27 @@ def export_html(walkthrough, destination, frames_per_stage=16):
     destination.write_text(template.replace("__ANIMATION_DATA__", payload.replace("<", "\\u003c")), encoding="utf-8")
     plt.close(walkthrough.fig)
     return destination
+
+
+def export_downloads(html_path):
+    """Add a downloadable GIF to an existing player without rerunning the pipeline."""
+    html_path = Path(html_path)
+    html = html_path.read_text(encoding="utf-8")
+    payload = json.loads(html.split("const data = ", 1)[1].split(";\nconst image", 1)[0])
+    frames = []
+    # Palette conversion keeps GIF export memory bounded for the embedded PNG frames.
+    for encoded in payload["frames"]:
+        with Image.open(io.BytesIO(base64.b64decode(encoded))) as image:
+            frames.append(image.convert("RGB").quantize(colors=128))
+    if not frames or not 2 <= payload["framesPerStage"] <= 60:
+        raise ValueError("Invalid animation frames or timing")
+    duration = round(4000 / payload["framesPerStage"] / 10) * 10
+    gif = io.BytesIO()
+    frames[0].save(gif, format="GIF", save_all=True, append_images=frames[1:],
+                   duration=duration, loop=0, disposal=2, optimize=False)
+    gif_path = html_path.with_suffix(".gif")
+    gif_path.write_bytes(gif.getvalue())
+    payload["gif"] = base64.b64encode(gif.getvalue()).decode("ascii")
+    template = Path(__file__).with_name("animation_player.html").read_text(encoding="utf-8")
+    html_path.write_text(template.replace("__ANIMATION_DATA__", json.dumps(payload).replace("<", "\\u003c")), encoding="utf-8")
+    return gif_path

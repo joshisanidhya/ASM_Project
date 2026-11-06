@@ -114,6 +114,25 @@ regenerated from saved parameters/seed. Rerun the pipeline for a complete replay
 The animation never estimates raw rejection counts or reconstructs vehicle
 positions from a histogram. Preprocessing examples are labelled illustrations.
 
+### Download and export
+
+The player has **Download interactive HTML** and **Download current frame (PNG)**
+buttons. Add `--gif` to generate a looping GIF for slides and embed a third
+**Download animation (GIF)** button. The interactive HTML remains self-contained,
+including its GIF download; the GIF is also saved beside it.
+
+```powershell
+uv run python animate.py --dataset highd --gif --open
+
+# Export an existing animation without rerunning fitting or rendering:
+uv run python animate.py --export-existing outputs/animation_demo/animations/highd.html
+uv run python animate.py --export-existing outputs/animation_demo/animations/ngsim.html
+```
+
+GIF preserves the 14-stage sequence (about 56 seconds, looping) but has no player
+controls or audio. HTML retains playback controls and text explanations. GIF uses
+Pillow, already installed with Matplotlib; no FFmpeg installation is required.
+
 ## Stochastic extensions and reports
 
 The renewal extension resamples empirical headways independently and compares

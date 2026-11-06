@@ -37,6 +37,11 @@
     <input type="range" id="seek" min="0" value="0" step="1" aria-label="Animation frame">
     <div class="row"><span class="hint">Space: play/pause · Left/Right: previous/next stage · Home: restart</span><output id="status"></output></div>
     <details><summary>Read the stage explanation as text</summary><p id="explanation"></p></details>
+    <div class="row" style="margin-top:16px" aria-label="Download animation">
+      <button id="download-html">Download interactive HTML</button>
+      <button id="download-png">Download current frame (PNG)</button>
+      <button id="download-gif" hidden>Download animation (GIF)</button>
+    </div>
   </div>
   <p class="hint">Paper modelling: stages 1–10. ASM renewal and Markov extensions: stages 11–13. No external scripts, fonts, or internet connection are required.</p>
 </main>
@@ -72,6 +77,27 @@ document.getElementById('next').onclick = () => jump(1);
 stage.onchange = () => { pause(); display(Number(stage.value) * data.framesPerStage); };
 seek.oninput = () => { pause(); display(Number(seek.value)); };
 speed.onchange = () => { if (timer) start(); };
+function download(blob, name) {
+  const url = URL.createObjectURL(blob), link = document.createElement('a');
+  link.href = url; link.download = name;
+  document.body.appendChild(link); link.click(); link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+function binaryBlob(base64, type) {
+  const bytes = Uint8Array.from(atob(base64), character => character.charCodeAt(0));
+  return new Blob([bytes], {type});
+}
+document.getElementById('download-html').onclick = () => {
+  // Save the complete embedded player; it opens offline and retains GIF downloads.
+  download(new Blob(['<!doctype html>\n' + document.documentElement.outerHTML], {type:'text/html;charset=utf-8'}), `${data.dataset}-animation.html`);
+};
+document.getElementById('download-png').onclick = () => {
+  download(binaryBlob(data.frames[current], 'image/png'), `${data.dataset}-frame-${current + 1}.png`);
+};
+document.getElementById('download-gif').hidden = !data.gif;
+document.getElementById('download-gif').onclick = () => {
+  if (data.gif) download(binaryBlob(data.gif, 'image/gif'), `${data.dataset}-animation.gif`);
+};
 document.addEventListener('keydown', event => {
   if (['INPUT', 'SELECT', 'BUTTON'].includes(event.target.tagName)) return;
   if (event.code === 'Space') { event.preventDefault(); play.click(); }

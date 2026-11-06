@@ -1,4 +1,6 @@
 import json
+import base64
+import io
 from pathlib import Path
 import shutil
 import subprocess
@@ -8,8 +10,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pytest
+from PIL import Image
 
-from headway.animation import STAGES, Walkthrough, export_html
+from headway.animation import STAGES, Walkthrough, export_html, export_downloads
 
 
 @pytest.fixture(scope="module")
@@ -68,14 +71,18 @@ def test_offline_player_controls():
     # Execute the real player script with a minimal DOM; no browser/package dependency.
     html = Path("headway/animation_player.html").read_text(encoding="utf-8")
     script = html.split("<script>")[1].split("</script>")[0]
-    data = {"frames": ["png"] * 6, "descriptions": ["explanation"] * 6,
+    data = {"frames": ["cG5n"] * 6, "descriptions": ["explanation"] * 6, "gif": "R0lGODlh",
             "stages": ["Data", "Fit", "Simulation"], "framesPerStage": 2,
             "dataset": "highd", "source": "synthetic"}
     setup = """
 const assert = require('node:assert/strict');
 const elements = new Map();
+const downloads = [];
 let keyHandler, tick;
 global.document = {
+  documentElement: {outerHTML:'<html>offline player</html>'},
+  body: {appendChild() {}},
+  createElement() { return {click() {downloads.push(this.download);}, remove(){}}; },
   getElementById(id) {
     if (!elements.has(id)) elements.set(id, {value:'1', options:[],
       add(option) { this.options.push(option); }, click() { this.onclick(); }});
@@ -86,6 +93,7 @@ global.document = {
 global.Option = function(text, value) { this.text = text; this.value = value; };
 global.setInterval = callback => { tick = callback; return 1; };
 global.clearInterval = () => {};
+global.setTimeout = callback => callback();
 """
     checks = """
 assert.equal(current, 0);
@@ -103,6 +111,35 @@ assert.equal(current, 0);
 keyHandler({target:{tagName:'BODY'}, code:'Space', preventDefault(){}});
 assert.equal(play.textContent, 'Pause');
 speed.value = 2; speed.onchange(); tick(); assert.equal(current, 1);
+assert.equal(document.getElementById('download-gif').hidden, false);
+document.getElementById('download-html').click();
+document.getElementById('download-png').click();
+document.getElementById('download-gif').click();
+assert.deepEqual(downloads, ['highd-animation.html', 'highd-frame-2.png', 'highd-animation.gif']);
 """
     subprocess.run(["node", "-e", setup + script.replace("__ANIMATION_DATA__", json.dumps(data)) + checks],
                    check=True, capture_output=True)
+
+
+def test_gif_export_preserves_frames_timing_and_embeds_download(tmp_path):
+    frames = []
+    for color in ("red", "blue"):
+        buffer = io.BytesIO()
+        Image.new("RGB", (16, 16), color).save(buffer, format="PNG")
+        frames.append(base64.b64encode(buffer.getvalue()).decode("ascii"))
+    payload = {"frames": frames, "descriptions": ["a", "b"], "stages": ["Example"],
+               "framesPerStage": 2, "dataset": "highd", "source": "synthetic"}
+    path = tmp_path / "example.html"
+    template = Path("headway/animation_player.html").read_text(encoding="utf-8")
+    path.write_text(template.replace("__ANIMATION_DATA__", json.dumps(payload)), encoding="utf-8")
+    gif_path = export_downloads(path)
+    with Image.open(gif_path) as gif:
+        assert gif.n_frames == 2 and gif.info["loop"] == 0
+        assert gif.info["duration"] == 2000
+        assert gif.convert("RGB").getpixel((0, 0)) == (255, 0, 0)
+        gif.seek(1)
+        assert gif.convert("RGB").getpixel((0, 0)) == (0, 0, 255)
+    updated = path.read_text(encoding="utf-8")
+    saved = json.loads(updated.split("const data = ", 1)[1].split(";\nconst image", 1)[0])
+    assert base64.b64decode(saved["gif"]) == gif_path.read_bytes()
+    assert saved["frames"] == frames
