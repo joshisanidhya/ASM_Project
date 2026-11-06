@@ -1,0 +1,60 @@
+% Scalar results used in the text. Source: the run summarised in report.zip (lab PC, highD: all 60 recordings;
+% NGSIM: I-80, recording period 1, MCMC 2 chains x 10,000 iterations, 5,000 warmup, seed 42). Table bodies are in tables/.
+% Derived quantities (flow = 3600/mean headway, kappa = -ln b, recurrence = 1/pi) agree with the run's own printout.
+
+% ---- samples ---------------------------------------------------------------------------------
+\newcommand{\hdN}{1,225,460}
+\newcommand{\ngN}{117,068}
+\newcommand{\hdMean}{2.21}
+\newcommand{\ngMean}{3.08}
+\newcommand{\hdMedian}{1.66}
+\newcommand{\ngMedian}{2.56}
+
+% ---- proposed distribution (posterior means) ------------------------------------------------
+\newcommand{\hdA}{0.954}
+\newcommand{\hdB}{0.540}
+\newcommand{\hdKappa}{0.617}
+\newcommand{\ngA}{2.336}
+\newcommand{\ngB}{0.524}
+\newcommand{\ngKappa}{0.646}
+
+% ---- goodness of fit -------------------------------------------------------------------------
+\newcommand{\hdKLprop}{0.0036}
+\newcommand{\ngKLprop}{0.0760}
+\newcommand{\ngKLburr}{0.0016}
+\newcommand{\hdKLmaxdiff}{0.0058}   % largest |ours - paper| over the seven distributions
+\newcommand{\ngKLmaxdiff}{0.0311}
+\newcommand{\hdWmaxdiff}{0.0006}
+\newcommand{\ngWmaxdiff}{0.0110}    % gamma; 0.0003 or less for the other six
+
+% ---- renewal process ---------------------------------------------------------------------------
+\newcommand{\hdRate}{0.4520}
+\newcommand{\ngRate}{0.3242}
+\newcommand{\hdFlow}{1,627}
+\newcommand{\ngFlow}{1,167}
+\newcommand{\hdCV}{0.61}
+\newcommand{\ngCV}{0.46}
+\newcommand{\renewMeanMax}{0.4}     % percent, over t = 30, 60, 120, 300 s
+\newcommand{\renewVarMax}{11.9}
+\newcommand{\renewMeanShown}{0.2}   % percent, at the two horizons of Table~\ref{tab:renewal}
+\newcommand{\renewVarShown}{3.8}
+
+% ---- Markov regimes (stationary distribution = observed regime fractions) ---------------------
+\newcommand{\hdPiC}{0.444}
+\newcommand{\hdPiP}{0.431}
+\newcommand{\hdPiF}{0.125}
+\newcommand{\ngPiC}{0.094}
+\newcommand{\ngPiP}{0.724}
+\newcommand{\ngPiF}{0.182}
+
+% ---- dependence of successive headways (highD, file order; see Section~\ref{sec:indep}) -------
+\newcommand{\hdLagOne}{0.839}
+\newcommand{\hdLagFive}{0.382}
+\newcommand{\hdBand}{0.0018}
+
+% ---- run time ----------------------------------------------------------------------------------
+\newcommand{\hdMcmcTime}{1.8}
+\newcommand{\ngMcmcTime}{1.7}
+
+% ---- test suite: `uv run pytest -q tests` ----
+\newcommand{\nTests}{46}
