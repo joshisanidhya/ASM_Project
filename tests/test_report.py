@@ -11,6 +11,7 @@ def test_report_builds_from_a_pipeline_run_and_refuses_synthetic_data(tmp_path):
 
     outputs = tmp_path / "outputs"
     subprocess.run([sys.executable, "run.py", "--iters", "600", "--warmup", "300", "--synthetic-size", "4000",
+                    "--data-dir", str(tmp_path / "no_raw_data"), "--workers", "1",
                     "--out", str(outputs)], check=True, capture_output=True)
 
     with pytest.raises(SystemExit, match="synthetic"):

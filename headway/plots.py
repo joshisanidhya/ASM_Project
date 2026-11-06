@@ -137,7 +137,7 @@ def plot_traces(
     for j, p in enumerate(param_names):
         ax = axes[j, 0]
         # Shaded warmup region
-        ax.axvspan(0, n_warmup, color="#EAEAEA", alpha=0.8, label="Warmup (5000)" if j == 0 else None)
+        ax.axvspan(0, n_warmup, color="#EAEAEA", alpha=0.8, label=f"Warmup ({n_warmup})" if j == 0 else None)
         for ch in range(c):
             ax.plot(
                 full_draws[ch, :, j],
@@ -205,7 +205,7 @@ def plot_goodness_of_fit_metrics(
     mcmc_metrics: Dict[str, Dict[str, float]],
     path: Union[str, Path],
 ) -> None:
-    """Bar charts of KL divergence and Wasserstein distance (paper Table 5)."""
+    """KL divergence and the legacy sorted-bin proxy (unverified Table 5 interpretation)."""
     dists = list(mcmc_metrics.keys())
     mcmc_kl = [mcmc_metrics[d]["kl"] for d in dists]
     mcmc_w = [mcmc_metrics[d]["wasserstein"] for d in dists]
@@ -218,8 +218,8 @@ def plot_goodness_of_fit_metrics(
     ax1.set_ylabel("D_KL", fontsize=11)
 
     ax2.bar(x, mcmc_w, 0.5, color="#4C72B0")
-    ax2.set_title("Wasserstein Distance, Eq. 17 (Lower is Better)", fontsize=11, fontweight="bold")
-    ax2.set_ylabel("W", fontsize=11)
+    ax2.set_title("Sorted-bin Probability Proxy (Lower is Better)", fontsize=11, fontweight="bold")
+    ax2.set_ylabel("W_bin (dimensionless)", fontsize=11)
 
     for ax in (ax1, ax2):
         ax.set_xticks(x)

@@ -32,14 +32,15 @@ def split_rhat(draws: np.ndarray) -> np.ndarray:
     B = h * x.mean(axis=1).var(axis=0, ddof=1)
     with np.errstate(all="ignore"):
         var_plus = ((h - 1.0) / h) * W + (B / h)
-        rhat = np.sqrt(np.where(W > 1e-14, var_plus / W, 1.0))
-    return np.nan_to_num(rhat, nan=1.0, posinf=100.0)
+        rhat = np.sqrt(var_plus / W)
+    # Constant chains cannot establish convergence, even if they are stuck at the same value.
+    return np.where((W > 0) & np.isfinite(rhat), rhat, np.inf)
 
 
 def effective_sample_size(draws: np.ndarray) -> np.ndarray:
     """Compute Effective Sample Size (ESS) per parameter across multiple chains.
 
-    Uses initial positive sequence estimator of autocorrelation.
+    Uses paired initial-positive, monotone autocorrelations and between-chain variance.
     """
     draws = np.asarray(draws, dtype=float)
     if draws.ndim == 2:
@@ -48,29 +49,28 @@ def effective_sample_size(draws: np.ndarray) -> np.ndarray:
     total_samples = c * n
     ess = np.zeros(d, dtype=float)
 
+    if n < 4:
+        return np.full(d, np.nan)
     for p in range(d):
-        chain_ess = []
-        for ch in range(c):
-            y = draws[ch, :, p]
-            y_centered = y - np.mean(y)
-            var_y = np.var(y, ddof=1)
-            if var_y <= 1e-14:
-                chain_ess.append(float(n))
-                continue
-            # Autocorrelation via FFT
-            n_fft = 2 ** int(np.ceil(np.log2(2 * n)))
-            f = np.fft.fft(y_centered, n_fft)
-            acorr = np.fft.ifft(f * np.conj(f)).real[:n]
-            acorr = acorr / (var_y * np.arange(n, 0, -1))
-            # Initial positive sequence
-            cutoff = 1
-            while cutoff < len(acorr) and acorr[cutoff] > 0.05:
-                cutoff += 1
-            act = 1.0 + 2.0 * np.sum(acorr[1:cutoff])
-            chain_ess.append(n / max(act, 1.0))
-        ess[p] = np.sum(chain_ess)
-
-    return np.clip(ess, 1.0, float(total_samples))
+        y = draws[:, :, p]
+        variances = y.var(axis=1, ddof=1)
+        if not np.all(np.isfinite(y)) or np.any(variances <= 0):
+            continue
+        within = variances.mean()
+        between = n * y.mean(axis=1).var(ddof=1) if c > 1 else 0.0
+        var_plus = (n - 1) / n * within + between / n
+        n_fft = 2 ** int(np.ceil(np.log2(2 * n)))
+        f = np.fft.rfft(y - y.mean(axis=1, keepdims=True), n=n_fft, axis=1)
+        acov = np.fft.irfft(f * f.conj(), n=n_fft, axis=1)[:, :n] / n
+        rho = 1 - (within - acov.mean(axis=0)) / var_plus
+        rho[0] = 1.0
+        pairs = rho[:2 * (n // 2)].reshape(-1, 2).sum(axis=1)
+        nonpositive = np.flatnonzero(pairs <= 0)
+        if len(nonpositive):
+            pairs = pairs[:nonpositive[0]]
+        tau = -1 + 2 * np.minimum.accumulate(pairs).sum() if len(pairs) else 1.0
+        ess[p] = total_samples / max(tau, 1.0)
+    return np.clip(ess, 0.0, float(total_samples))
 
 
 def summarize_posterior(

@@ -30,6 +30,7 @@ def metropolis(
     n_iter: int = 10000,
     n_warmup: int = 5000,
     rng: np.random.Generator = None,
+    initial_cov: np.ndarray = None,
 ) -> ChainOutput:
     """Run one MCMC chain using adaptive random-walk Metropolis-Hastings.
 
@@ -43,6 +44,8 @@ def metropolis(
     Returns:
         ChainOutput with draws, warmup draws, full history, and acceptance rates.
     """
+    if not 0 <= n_warmup < n_iter:
+        raise ValueError("Require 0 <= n_warmup < n_iter")
     if rng is None:
         rng = np.random.default_rng()
 
@@ -62,7 +65,8 @@ def metropolis(
             raise ValueError(f"Starting point {x0} has non-finite log-posterior {lp}")
 
     # Initial proposal covariance scaled by Gelman-Roberts-Gilks factor
-    cov = np.diag((0.1 * np.maximum(np.abs(x), 0.5)) ** 2)
+    cov = (np.diag((0.1 * np.maximum(np.abs(x), 0.5)) ** 2)
+           if initial_cov is None else np.asarray(initial_cov, dtype=float))
     L = np.linalg.cholesky(cov)
     scale = 2.38 / np.sqrt(d)
 
@@ -102,7 +106,8 @@ def metropolis(
                 history = full_draws[max(0, i - 2 * cov_interval) : i + 1]
                 if np.all(history.std(axis=0) > 1e-8):
                     emp_cov = np.cov(history.T)
-                    reg_cov = np.atleast_2d(emp_cov) + 1e-8 * np.eye(d)
+                    jitter = max(float(np.trace(np.atleast_2d(emp_cov))) / d * 1e-6, 1e-12)
+                    reg_cov = np.atleast_2d(emp_cov) + jitter * np.eye(d)
                     try:
                         L = np.linalg.cholesky(reg_cov)
                     except np.linalg.LinAlgError:

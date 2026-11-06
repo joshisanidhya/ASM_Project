@@ -7,17 +7,36 @@
 from typing import Any, Dict, Optional, Sequence, Tuple
 
 import numpy as np
-from scipy.stats import chi2, ks_2samp, kstest
+from scipy.stats import chi2, ks_2samp, kstest, wasserstein_distance
 
-from .distributions import ALPHA, T_MAX, Dist
+from .distributions import ALPHA, CENTERS, T_MAX, Dist
 
 _GRID = np.linspace(ALPHA, T_MAX, 50_001)
+
+
+def histogram_distances(counts, model_probs):
+    """KL and two distinct distances on the paper's 49 bins.
+
+    ``wasserstein`` retains the historical sorted-probability proxy for comparison
+    with earlier runs. The paper does not specify its Eq. 17 inputs, so this proxy
+    is an interpretation, not a verified reproduction of Table 5.
+    ``wasserstein_seconds`` transports mass between headway bin centers.
+    """
+    p = np.asarray(counts, dtype=float) / np.sum(counts)
+    q = np.asarray(model_probs, dtype=float)
+    m = p > 0
+    return {
+        "kl": float(np.sum(p[m] * np.log(p[m] / np.maximum(q[m], 1e-300)))),
+        "wasserstein": float(np.mean(np.abs(np.sort(p) - np.sort(q)))),
+        "wasserstein_seconds": float(wasserstein_distance(CENTERS, CENTERS, p, q)),
+    }
 
 
 def merge_bins_for_chi2(obs: np.ndarray, exp: np.ndarray, min_count: float = 5.0) -> Tuple[np.ndarray, np.ndarray]:
     """Paper Section 3.4: Group adjacent bins until observed frequency Oi >= 5.
 
-    Ensures valid asymptotic properties for the chi-square test statistic.
+    This reproduces the observed-count rule; it does not guarantee sufficiently
+    large expected counts for the asymptotic chi-square approximation.
     """
     o, e = [], []
     ao, ae = 0.0, 0.0
@@ -71,15 +90,14 @@ def evaluate(
         chi2_dof: Chi-square degrees of freedom (bins - 1 - n_params)
         chi2_p: Chi-square p-value
         kl: KL divergence D_KL(P_obs || P_model) over the 49 bins
-        wasserstein: Eq. 17 with p=1, on the same scale as the paper's Table 5 (no unit: it
-            compares bin probabilities, not times). See the note where it is computed.
+        wasserstein: legacy sorted-bin probability proxy (dimensionless; unverified Eq. 17 interpretation)
+        wasserstein_seconds: Wasserstein-1 between weighted headway bin centers [seconds]
     """
     n = float(counts.sum())
     p_model = dist.bin_probs(theta)
-    p_obs = counts / n
 
-    # 1. Exact 1-sample Kolmogorov-Smirnov test (Eq. 14)
-    # Tests empirical data directly against continuous model CDF
+    # The statistic is against the continuous CDF. The p-value is nominal: it does
+    # not adjust for estimating parameters on these data or for serial dependence.
     try:
         ks_exact = kstest(data, lambda t: dist.trunc_cdf(t, theta))
         ks_D = float(ks_exact.statistic)
@@ -104,17 +122,6 @@ def evaluate(
     stat = float(np.sum((o - e) ** 2 / safe_e))
     chi_p = float(chi2.sf(stat, dof)) if dof > 0 else np.nan
 
-    # 4. Kullback-Leibler divergence (Eq. 16)
-    m = p_obs > 0.0
-    safe_p_model = np.maximum(p_model, 1e-300)
-    kl = float(np.sum(p_obs[m] * np.log(p_obs[m] / safe_p_model[m])))
-
-    # 5. Wasserstein distance (Eq. 17, p = 1): mean |X_(i) - Y_(i)| over the sorted observed and
-    # model bin-probability vectors. The paper does not say what X and Y are; this reading is the
-    # one whose magnitudes (~1e-3, Table 5) fit, whereas a distance along the time axis comes out
-    # in seconds and is ~100x larger. It ignores where each bin sits on the time axis.
-    w_dist = float(np.mean(np.abs(np.sort(p_obs) - np.sort(p_model))))
-
     return {
         "ks_D": ks_D,
         "ks_p": ks_p,
@@ -123,6 +130,5 @@ def evaluate(
         "chi2": stat,
         "chi2_dof": dof,
         "chi2_p": chi_p,
-        "kl": kl,
-        "wasserstein": w_dist,
+        **histogram_distances(counts, p_model),
     }

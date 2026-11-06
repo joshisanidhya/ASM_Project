@@ -75,7 +75,7 @@ This agrees with the closed form in [1] and is verified against numerical integr
 # Methodology
 
 1. **Data.** Load the datasets, sample at 1 Hz, keep vehicles with a leader, and keep headways in $[0.5,25]$ s.
-2. **Estimation.** For each of the seven distributions, run two Metropolis-Hastings chains of 10,000 iterations (5,000 warmup) with the priors of [1]; the estimate is the posterior mean. The likelihood uses the counts in 49 bins of width 0.5 s, $\log L=\sum_k n_k\log p_k(\theta)$, which makes each step cost independent of the sample size.
+2. **Estimation.** For each of the seven distributions, run two Metropolis-Hastings chains of 10,000 iterations (5,000 warmup) with the priors of [1]; the estimate is the posterior mean. The likelihood is $\log L=\sum_i\log f(h_i\mid\theta)$ using the PDFs in Table 1. This is a direct interpretation of the paper's PDF-based estimation description; the authors do not publish their likelihood code. Equal observations are counted without rounding, and exact sufficient statistics reduce computation where available. Log and logit parameter transformations include their Jacobian terms, preserving the posterior and allowing shifts arbitrarily close to the minimum observed headway.
 3. **Goodness of fit.** KS, chi-square, KL divergence and Wasserstein distance between the observed and fitted bin probabilities.
 4. **Stochastic processes.** Estimate $P$ by transition counts; compute $P^n$, $\pi$ and recurrence times; simulate renewal paths and Markov paths.
 5. **Validation.** (a) Simulated $N(t)$ against renewal theory (mean, variance and distribution at $t=30,60,120,300$ s from 2,000 simulated paths); (b) autocorrelation of the headway sequence, to test the independence assumption; (c) Chapman-Kolmogorov check of $P^n$ against empirical $n$-step frequencies, stationary distribution against observed regime fractions, and a likelihood-ratio test of first against second order; (d) our results against those published in [1].
@@ -128,7 +128,7 @@ On highD, the proposed distribution has a mode $a=$ @@highd.a@@ s (paper: @@high
 
 # Model Validation
 
-**Against the published results.** Our KL divergences differ from Table 5 of the paper by at most @@highd.kl.max_abs_diff@@ on highD and @@ngsim.kl.max_abs_diff@@ on NGSIM (Table 6). The best model by KL is @@highd.kl.best@@ on highD in our run (paper: Proposed) and @@ngsim.kl.best@@ on NGSIM (paper: Burr). The Wasserstein values (Table 7) follow our reading of Eq. 17 (Section 13) and are on the paper's scale; the largest difference is @@highd.w.max_abs_diff@@ on highD and @@ngsim.w.max_abs_diff@@ on NGSIM. The KL of badly fitting baselines is sensitive to the exact sample, which differs from the paper's NGSIM sample (Section 13). The paper's Wasserstein value for Gamma on NGSIM (0.0173) is also inconsistent with its own KL ranking, so we do not expect to reproduce it.
+**Against the published results.** Our KL divergences differ from Table 5 of the paper by at most @@highd.kl.max_abs_diff@@ on highD and @@ngsim.kl.max_abs_diff@@ on NGSIM (Table 6). The best model by KL is @@highd.kl.best@@ on highD in our run (paper: Proposed) and @@ngsim.kl.best@@ on NGSIM (paper: Burr). Table 7 retains the project's sorted-bin probability proxy alongside the published W values; equivalence is unverified because Eq. 17 does not specify its inputs. The differences are @@highd.w.max_abs_diff@@ on highD and @@ngsim.w.max_abs_diff@@ on NGSIM. For this proxy, sorting cannot increase the L1 difference and Pinsker's inequality gives $W_{bin}\le\sqrt{2D_{KL}}/49$. The paper's NGSIM Gamma pair (KL=0.1182, W=0.0173) exceeds that bound (about 0.0099), so it cannot result from this proxy applied to the same 49 normalized probabilities. The output also reports Wasserstein-1 between headway bin centers in seconds, and evaluates fixed Table 3 parameters on our data in `paper_comparison.csv` to help distinguish fitting from data/evaluation differences.
 
 **MCMC convergence.** The largest split $\hat R$ is @@highd.rhat_max@@ (highD) and @@ngsim.rhat_max@@ (NGSIM), with acceptance rates between @@both.acc_range@@ (the optimum for random-walk Metropolis is about 23%; Appendix, Table A2). @@report.unconverged@@
 
@@ -144,13 +144,13 @@ On highD, the proposed distribution has a mode $a=$ @@highd.a@@ s (paper: @@high
 
 *Model comparison.* @@both.model_comparison@@ The parameters of the proposed distribution are directly interpretable: $a$ is the most frequent headway and $\kappa=-\ln b$ is the exponential decay rate on either side of it.
 
-*Estimation.* Because the likelihood is evaluated on 49 bins, the cost of MCMC does not grow with the sample size; fitting all seven distributions took @@highd.mcmc_time@@ s on highD (@@highd.n@@ samples) and @@ngsim.mcmc_time@@ s on NGSIM (@@ngsim.n@@ samples).
+*Estimation.* The likelihood retains all observations. Exact multiplicities and sufficient statistics reduce repeated work, but runtime for some distributions grows with the number of distinct headways. Fitting all seven distributions took @@highd.mcmc_time@@ s on highD (@@highd.n@@ samples) and @@ngsim.mcmc_time@@ s on NGSIM (@@ngsim.n@@ samples).
 
 # Limitations
 
 1. **NGSIM sample.** The paper uses the reconstructed I-80 data; we use the original export and our own choice of recording period (Section 4). Some baseline KL values therefore differ from the paper's.
-2. **Likelihood.** MCMC uses binned counts rather than every observation, which is exact only to the 0.5 s bin resolution.
-3. **Wasserstein distance.** The paper does not define the two vectors in Eq. 17. We compare the sorted observed and model bin probabilities, the only reading that reproduces its magnitudes; this measure ignores where each bin lies on the time axis.
+2. **Likelihood.** We use the observation PDFs in Table 1. The paper does not disclose its likelihood implementation or whether it conditions it on the data filtering window. Our fitting uses the stated PDFs without adding an upper truncation normalizer; binned evaluation and simulation condition on the retained 0.5–25 s window. The paper's normal-prior notation is also ambiguous; the implementation uses standard deviation 10.
+3. **Wasserstein distance.** The paper does not define the two vectors in Eq. 17. The legacy sorted-bin proxy ignores where bins lie on the time axis and is not confirmed as the authors' metric. A separate Wasserstein-1 distance in seconds is exported in `metrics.csv`.
 4. **Dependence.** Consecutive one-second samples of one follower are serially dependent, so the i.i.d. renewal assumption and the first-order Markov assumption are approximations, and the sequences contain a few vehicle-to-vehicle jumps (see Section 11).
 5. **Chain definition.** One Markov step is one second of one vehicle's trajectory; the regime thresholds (1.5 s and 4 s) are our choice.
 6. **Convergence.** @@report.unconverged@@

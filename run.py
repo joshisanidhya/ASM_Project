@@ -88,7 +88,6 @@ def run_dataset_pipeline(name: str, path: Optional[Path], args: argparse.Namespa
         raise ValueError(f"[{name}] No valid car-following headways extracted from {source_desc}.")
 
     counts = np.histogram(data, bins=EDGES)[0].astype(float)
-    tmin = float(data.min())
     print(f"\n=======================================================")
     print(f" Dataset: {name.upper()} | Samples: {len(data):,} | Mean: {data.mean():.2f}s | Source: {source_desc}")
     print(f"=======================================================")
@@ -97,21 +96,24 @@ def run_dataset_pipeline(name: str, path: Optional[Path], args: argparse.Namespa
         "dataset": name, "source": "raw" if path is not None else "synthetic",
         "n_headways": len(data), "mean_s": data.mean(), "median_s": np.median(data),
         "std_s": data.std(ddof=1), "min_s": data.min(), "max_s": data.max(),
+        "likelihood": "table1_observation_pdf", "chains": args.chains,
+        "iterations": args.iters, "warmup": args.warmup, "seed": args.seed,
         "ngsim_location": args.location if name == "ngsim" else "",
         "ngsim_period": (args.period or "all") if name == "ngsim" else "",
         "ngsim_lanes": ("all" if not args.lanes else ",".join(map(str, args.lanes))) if name == "ngsim" else "",
     }]).to_csv(out_dir / "dataset_info.csv", index=False)
+    pd.DataFrame({"left_s": EDGES[:-1], "right_s": EDGES[1:], "count": counts.astype(int)}).to_csv(
+        out_dir / "headway_histogram.csv", index=False)
 
     # 2. Parameter Estimation: MCMC
-    print(f"[{name}] Running MCMC (2 chains x {args.iters:,} iters, {args.warmup:,} warmup)...")
+    print(f"[{name}] Running MCMC ({args.chains} chains x {args.iters:,} iters, {args.warmup:,} warmup; Table 1 PDF likelihood)...")
     t0_mcmc = time.perf_counter()
     mcmc_runtimes = {}
     fits = {}
     for dname in DISTS.keys():
         t0_d = time.perf_counter()
         fit_res = fit_all(
-            counts,
-            tmin,
+            data,
             n_iter=args.iters,
             n_warmup=args.warmup,
             chains=args.chains,
@@ -153,7 +155,7 @@ def run_dataset_pipeline(name: str, path: Optional[Path], args: argparse.Namespa
             posterior_rows.append({"distribution": dname, **ps})
 
         rhat = split_rhat(draws)
-        is_converged = bool((rhat < 1.05).all())
+        is_converged = bool((np.isfinite(rhat) & (rhat < 1.05)).all())
         diagnostics_rows.append({
             "distribution": dname,
             "max_rhat": float(np.nanmax(rhat)),
@@ -172,7 +174,12 @@ def run_dataset_pipeline(name: str, path: Optional[Path], args: argparse.Namespa
         plot_posteriors(f"{name.upper()} — {dname}", pnames, draws, fig_dir / f"posterior_{slug}.png")
 
         flag = " [OK]" if is_converged else " [NOT CONVERGED]"
-        print(f"  {dname:22s} | KL={m['kl']:.4f} | W={m['wasserstein']:.4f} | max R-hat={np.nanmax(rhat):.3f} | acc={avg_acc:.2%}{flag}")
+        print(f"  {dname:22s} | KL={m['kl']:.4f} | W_bin={m['wasserstein']:.4f} | W1={m['wasserstein_seconds']:.4f}s | max R-hat={np.nanmax(rhat):.3f} | acc={avg_acc:.2%}{flag}")
+
+    print(f"[{name}] W_bin is the legacy sorted-probability proxy; Eq. 17's inputs are unspecified in the paper.")
+    from headway.paper_reference import compare_with_paper
+    pd.DataFrame(compare_with_paper(name, counts, mcmc_params, metric_rows, diagnostics_rows)).to_csv(
+        out_dir / "paper_comparison.csv", index=False)
 
     # Plot proposed trace and posterior under default names
     if "Proposed" in fits:
@@ -283,12 +290,12 @@ def run_dataset_pipeline(name: str, path: Optional[Path], args: argparse.Namespa
 
     # 8. Save Standardized Output CSVs
     res_df = pd.DataFrame(metric_rows).set_index("distribution")
-    stat_cols = ["ks_D", "ks_p", "ks_2samp_D", "ks_2samp_p", "chi2", "chi2_dof", "chi2_p", "kl", "wasserstein"]
+    stat_cols = ["ks_D", "ks_p", "ks_2samp_D", "ks_2samp_p", "chi2", "chi2_dof", "chi2_p", "kl", "wasserstein", "wasserstein_seconds"]
     param_cols = [c for c in res_df.columns if c not in stat_cols]
 
     res_df[param_cols].to_csv(out_dir / "params.csv")
     res_df[["ks_D", "ks_p", "ks_2samp_D", "ks_2samp_p", "chi2", "chi2_dof", "chi2_p"]].to_csv(out_dir / "tests.csv")
-    res_df[["kl", "wasserstein"]].to_csv(out_dir / "metrics.csv")
+    res_df[["kl", "wasserstein", "wasserstein_seconds"]].to_csv(out_dir / "metrics.csv")
     pd.DataFrame(posterior_rows).to_csv(out_dir / "posterior.csv", index=False)
     pd.DataFrame(diagnostics_rows).to_csv(out_dir / "diagnostics.csv", index=False)
 
@@ -325,6 +332,8 @@ def main():
     parser.add_argument("--workers", type=int, default=None, help="Parallel worker processes (default: CPU count)")
     parser.add_argument("--out", default="outputs", help="Output directory")
     args = parser.parse_args()
+    if args.chains < 1 or not 0 <= args.warmup <= args.iters - 4:
+        parser.error("Need at least one chain and four retained draws; 0 <= warmup <= iters - 4.")
 
     target_datasets = ["highd", "ngsim"] if args.dataset == "all" else [args.dataset]
     if args.path and len(target_datasets) != 1:

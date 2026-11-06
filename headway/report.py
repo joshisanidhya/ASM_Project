@@ -141,13 +141,12 @@ def dataset_context(D, ds, label):
     if ds == "ngsim":
         period, loc = str(info.ngsim_period), str(info.ngsim_location).upper()
         lanes = "" if str(info.ngsim_lanes) == "all" else f", lanes {info.ngsim_lanes}"
-        c["ngsim.selection"] = (f"the {loc} data, recording period {period} (the first contiguous recording block){lanes}"
+        c["ngsim.selection"] = (f"the {loc} data, recording period {period}{lanes}"
                                 if period != "all" else f"the {loc} data, all recording periods{lanes}")
         c["ngsim.period_note"] = (
-            "The paper does not say which NGSIM recording period it used. Of the two periods in the export, we chose the one "
-            "whose mean headway and sample size are consistent with the values implied by the paper's fitted parameters "
-            "(a mean of about 2.9 s); this is an inference, not something the paper states."
-            if period == "1" else "We use every recording period in the export.")
+            "The paper does not identify its NGSIM recording period. This is an explicit run selection, "
+            "not a verified reconstruction of the authors' subset."
+            if period != "all" else "We use every recording period in the export.")
     return c
 
 
@@ -209,7 +208,7 @@ def tables(data, ctx):
     T["table.params"] = md_table(["Distribution", "highD ours", "highD paper", "NGSIM ours", "NGSIM paper"], rows,
                                  "**Table 5.** Posterior-mean parameters against the paper's Table 3.")
     T["table.kl"] = compare("kl", PAPER_TABLE5_KL, "**Table 6.** KL divergence (lower is better) against the paper's Table 5.", 4)
-    T["table.w"] = compare("wasserstein", PAPER_TABLE5_W, "**Table 7.** Wasserstein distance (Eq. 17, lower is better) against the paper's Table 5.", 4)
+    T["table.w"] = compare("wasserstein", PAPER_TABLE5_W, "**Table 7.** Our sorted-bin probability proxy alongside published Table 5 W values; the paper's metric inputs are unspecified, so equivalence is unverified.", 4)
 
     def vcol(ds):
         v, vi = data[ds]["vm"], data[ds]["vi"]

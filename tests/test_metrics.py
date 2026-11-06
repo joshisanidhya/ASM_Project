@@ -12,7 +12,7 @@ import pytest
 from scipy.stats import wasserstein_distance
 
 from headway.distributions import ALPHA, CENTERS, DISTS, EDGES, T_MAX
-from headway.metrics import evaluate, merge_bins_for_chi2, sample_model
+from headway.metrics import evaluate, histogram_distances, merge_bins_for_chi2, sample_model
 
 
 def test_merge_bins_guarantees_minimum_frequency():
@@ -57,6 +57,10 @@ def test_true_distributional_wasserstein_vs_proxy():
     # The proxy completely collapses the coordinate shift and reports near-zero!
     assert w_proxy < 0.01
     assert w_true > 200 * w_proxy
+
+    measured = histogram_distances(p1, p2)
+    assert measured["wasserstein_seconds"] == pytest.approx(w_true)
+    assert measured["wasserstein"] == pytest.approx(w_proxy)
 
 
 def test_evaluate_recovers_small_metrics_for_true_model():

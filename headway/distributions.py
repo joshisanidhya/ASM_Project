@@ -20,7 +20,7 @@ from dataclasses import dataclass
 from typing import Callable, Sequence, Tuple
 
 import numpy as np
-from scipy.special import gamma as gamma_fn, gammainc, ndtr
+from scipy.special import gammaln, gammainc, ndtr
 
 ALPHA = 0.5   # Minimum headway threshold [s], paper section 3.1
 T_MAX = 25.0  # Maximum headway threshold [s], paper section 4
@@ -65,10 +65,10 @@ def _proposed_pdf(t, a: float, b: float):
         return out
     log_b = np.log(b)
     if a > ALPHA:
-        norm = (b ** (a - ALPHA) - 2.0) / log_b
+        out[m] = (-log_b) * np.exp(log_b * np.abs(t[m] - a)) / (2.0 - b ** (a - ALPHA))
     else:
-        norm = -(b ** (ALPHA - a)) / log_b
-    out[m] = (b ** np.abs(t[m] - a)) / norm
+        # Location cancels below the lower support; avoid underflow in numerator / normalizer.
+        out[m] = (-log_b) * np.exp(log_b * (t[m] - ALPHA))
     return out
 
 
@@ -204,7 +204,7 @@ def _gamma_pdf(t, alpha: float, beta: float):
     with np.errstate(over="ignore", invalid="ignore"):
         log_pdf = (
             alpha * np.log(beta)
-            - np.log(gamma_fn(alpha))
+            - gammaln(alpha)
             + (alpha - 1.0) * np.log(t[m])
             - beta * t[m]
         )
@@ -295,7 +295,7 @@ class Dist:
     cdf: Callable               # (t, *theta) -> cdf
     logprior: Callable          # (theta, tmin) -> log prior density
     init: Callable              # (median, mean) -> initial theta
-    bounds: Sequence[Tuple[float, float]]  # Parameter bounds for MLE
+    bounds: Sequence[Tuple[float, float]]  # Natural support; gamma's data-dependent ceiling is applied in fitting.
 
     def check_params(self, theta) -> bool:
         """Validate parameter constraints."""
@@ -368,7 +368,7 @@ DISTS = {
             cdf=_proposed_cdf,
             logprior=lambda th, tm: _log_normal_prior(th[0]) + _log_uniform_prior(th[1], 0.0, 1.0),
             init=lambda med, mean: (float(med), 0.5),
-            bounds=[(-5.0, 25.0), (1e-6, 0.9999)],
+            bounds=[(-np.inf, np.inf), (0.0, 1.0)],
         ),
         Dist(
             name="Shifted Log-normal",
@@ -379,7 +379,7 @@ DISTS = {
             + _log_gamma_prior(th[1])
             + _log_uniform_prior(th[2], -10.0, tm),
             init=lambda med, mean: (float(np.log(max(med - 0.3, 0.1))), 0.7, 0.3),
-            bounds=[(-5.0, 5.0), (1e-4, 10.0), (-10.0, ALPHA - 1e-4)],
+            bounds=[(-np.inf, np.inf), (0.0, np.inf), (-10.0, np.inf)],
         ),
         Dist(
             name="Weibull",
@@ -388,7 +388,7 @@ DISTS = {
             cdf=_weibull_cdf,
             logprior=lambda th, tm: _gam_sum(*th),
             init=lambda med, mean: (1.5, float(mean)),
-            bounds=[(1e-4, 20.0), (1e-4, 50.0)],
+            bounds=[(0.0, np.inf), (0.0, np.inf)],
         ),
         Dist(
             name="Log-logistic",
@@ -397,7 +397,7 @@ DISTS = {
             cdf=_loglogistic_cdf,
             logprior=lambda th, tm: _gam_sum(*th),
             init=lambda med, mean: (2.5, float(med)),
-            bounds=[(1e-4, 20.0), (1e-4, 50.0)],
+            bounds=[(0.0, np.inf), (0.0, np.inf)],
         ),
         Dist(
             name="Gamma",
@@ -406,7 +406,7 @@ DISTS = {
             cdf=_gamma_cdf,
             logprior=lambda th, tm: _gam_sum(*th),
             init=lambda med, mean: (2.0, float(2.0 / mean)),
-            bounds=[(1e-4, 50.0), (1e-4, 50.0)],
+            bounds=[(0.0, np.inf), (0.0, np.inf)],
         ),
         Dist(
             name="Burr",
@@ -415,7 +415,7 @@ DISTS = {
             cdf=_burr_cdf,
             logprior=lambda th, tm: _gam_sum(*th),
             init=lambda med, mean: (3.0, 1.0, float(med)),
-            bounds=[(1e-4, 30.0), (1e-4, 20.0), (1e-4, 50.0)],
+            bounds=[(0.0, np.inf), (0.0, np.inf), (0.0, np.inf)],
         ),
         Dist(
             name="Shifted Exponential",
@@ -424,7 +424,7 @@ DISTS = {
             cdf=_shexp_cdf,
             logprior=lambda th, tm: _log_gamma_prior(th[0]) + _log_uniform_prior(th[1], -10.0, tm),
             init=lambda med, mean: (float(1.0 / max(mean - 0.4, 0.1)), 0.4),
-            bounds=[(1e-4, 20.0), (-10.0, ALPHA - 1e-4)],
+            bounds=[(0.0, np.inf), (-10.0, np.inf)],
         ),
     ]
 }
