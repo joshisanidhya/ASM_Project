@@ -65,10 +65,54 @@ Each dataset writes to `outputs/<dataset>/`:
 | `simulation_summary.csv` | Synthetic sampling checks |
 | `stochastic_*.csv`, `validation_*.csv` | Renewal and Markov analyses and assumption checks |
 | `draws/`, `figures/` | Full/retained chains and plots |
+| `animation_replay.npz` | Small filtered-row preview, generated headways, renewal paths and Markov evolution |
 
 Cross-dataset results are written to `outputs/comparisons/` and
 `outputs/all_results.csv`. Convergence failures are flagged, not repaired by
 substituting published parameter values.
+
+## Animated project walkthrough
+
+Generate an offline, browser-playable presentation with the existing Python
+dependencies (Matplotlib, NumPy and pandas). No video encoder or web server is needed.
+
+```powershell
+# Use saved results from your real-data pipeline run:
+uv run python animate.py --dataset highd --open
+uv run python animate.py --dataset ngsim --open
+
+# Without datasets: run an explicitly synthetic demo, then animate its results:
+uv run python animate.py --demo --dataset highd --open
+```
+
+The demo uses 2,000 synthetic observations and the normal 10,000/5,000 MCMC
+settings. Its files stay under `outputs/animation_demo/`; it never reads `data/`
+or replaces the real results under `outputs/highd/` and `outputs/ngsim/`.
+
+Open `outputs/animations/highd.html` or `ngsim.html` to present or share the
+real-result animation. Demo HTML is under `outputs/animation_demo/animations/`.
+The HTML embeds its pictures and controls and works offline. Use Play/Pause,
+Previous/Next, the stage menu, the timeline and speed selector. Space toggles
+playback; arrow keys jump stages. A text explanation is available below the player.
+
+Fourteen stages explain headway measurement, filtering, histogram construction,
+PDF likelihoods and priors, actual MCMC chains, posterior uncertainty, all seven
+fitted distributions, goodness-of-fit metrics, inverse-CDF sampling, simulation
+validation, renewal arrivals, Markov regimes, assumption checks and output files.
+The last three modelling stages are the ASM extensions, separate from the paper.
+
+Use `--model "Burr"` (or another full distribution name) to change the detailed
+trace/posterior view; the comparison still includes all seven models. Use
+`--results outputs/verification` for a different saved run, `--out talk.html` for
+a custom destination, or `--frames-per-stage 8` for a smaller file. Each stage
+lasts four seconds at normal speed, independently of its frame count.
+
+New pipeline runs save a compact `animation_replay.npz`. Older outputs can still
+be animated if they contain the histogram and current metric CSVs: missing row
+previews and renewal paths are explicitly marked, and generated headways are
+regenerated from saved parameters/seed. Rerun the pipeline for a complete replay.
+The animation never estimates raw rejection counts or reconstructs vehicle
+positions from a histogram. Preprocessing examples are labelled illustrations.
 
 ## Stochastic extensions and reports
 

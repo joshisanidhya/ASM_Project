@@ -299,6 +299,16 @@ def run_dataset_pipeline(name: str, path: Optional[Path], args: argparse.Namespa
     pd.DataFrame(posterior_rows).to_csv(out_dir / "posterior.csv", index=False)
     pd.DataFrame(diagnostics_rows).to_csv(out_dir / "diagnostics.csv", index=False)
 
+    # Compact replay of this run; the animation never needs to copy the raw datasets.
+    np.savez_compressed(
+        out_dir / "animation_replay.npz",
+        headway_preview=data[:200], simulated_headways=sim_samples,
+        renewal_time=rp_results.sample_paths_time,
+        renewal_counts=rp_results.sample_paths_counts,
+        renewal_expected=rp_results.expected_counts,
+        markov_paths=mc_results.sample_paths, markov_transient=transient_traj,
+    )
+
     print(f"[{name}] Successfully generated all CSV tables and figures under {out_dir}/")
     return {
         "name": name,

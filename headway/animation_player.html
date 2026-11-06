@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Headway project | Animated walkthrough</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #e2e8f0; color: #0f172a; font: 16px system-ui, sans-serif; }
+  main { max-width: 1200px; margin: 24px auto; padding: 0 16px; }
+  header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  h1 { font-size: 24px; margin-bottom: 8px; }
+  #source { font-size: 13px; font-weight: 700; color: #1d4ed8; }
+  img { display: block; width: 100%; background: #f8fafc; border-radius: 12px; margin-top: 16px; }
+  .controls { background: white; padding: 18px; border-radius: 12px; margin-top: 12px; }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  button, select { font: inherit; padding: 9px 12px; background: white; border: 1px solid #94a3b8; border-radius: 6px; cursor: pointer; }
+  #play { background: #2563eb; color: white; border-color: #2563eb; min-width: 90px; }
+  input[type=range] { width: 100%; margin: 18px 0; accent-color: #2563eb; }
+  button:focus-visible, select:focus-visible, input:focus-visible { outline: 3px solid #e97928; outline-offset: 3px; }
+  .hint { color: #475569; font-size: 13px; }
+  #status { margin-left: auto; font-size: 13px; }
+  details { margin-top: 18px; } #explanation { white-space: pre-line; line-height: 1.6; }
+</style>
+<main>
+  <header><h1>Inside the headway project</h1><span id="source"></span></header>
+  <p class="hint">An offline replay of the Python pipeline. Pause any stage to read its explanation.</p>
+  <img id="frame" alt="Animated explanation of the headway modelling pipeline">
+  <div class="controls">
+    <div class="row">
+      <button id="previous" aria-label="Previous stage">Previous</button>
+      <button id="play">Play</button>
+      <button id="next" aria-label="Next stage">Next</button>
+      <label for="stage">Stage</label><select id="stage"></select>
+      <label for="speed">Speed</label>
+      <select id="speed"><option value="0.5">0.5x</option><option value="1" selected>1x</option><option value="2">2x</option></select>
+    </div>
+    <input type="range" id="seek" min="0" value="0" step="1" aria-label="Animation frame">
+    <div class="row"><span class="hint">Space: play/pause · Left/Right: previous/next stage · Home: restart</span><output id="status"></output></div>
+    <details><summary>Read the stage explanation as text</summary><p id="explanation"></p></details>
+  </div>
+  <p class="hint">Paper modelling: stages 1–10. ASM renewal and Markov extensions: stages 11–13. No external scripts, fonts, or internet connection are required.</p>
+</main>
+<script>
+const data = __ANIMATION_DATA__;
+const image = document.getElementById('frame'), stage = document.getElementById('stage');
+const seek = document.getElementById('seek'), play = document.getElementById('play');
+const speed = document.getElementById('speed'), status = document.getElementById('status');
+let current = 0, timer = null;
+data.stages.forEach((title, i) => stage.add(new Option(`${i + 1}. ${title}`, i)));
+document.getElementById('source').textContent = `${data.dataset.toUpperCase()} · ${data.source === 'raw' ? 'RAW-DATA RESULTS' : 'SYNTHETIC DEMO'}`;
+seek.max = data.frames.length - 1;
+function display(index) {
+  current = Math.max(0, Math.min(data.frames.length - 1, index));
+  const s = Math.floor(current / data.framesPerStage);
+  image.src = 'data:image/png;base64,' + data.frames[current];
+  image.alt = `${data.dataset}: stage ${s + 1}, ${data.stages[s]}. Read the explanation in the image; pause to inspect.`;
+  document.getElementById('explanation').textContent = data.descriptions[current];
+  stage.value = s; seek.value = current;
+  status.textContent = `Stage ${s + 1} / ${data.stages.length} · Frame ${current + 1} / ${data.frames.length}`;
+}
+function pause() { clearInterval(timer); timer = null; play.textContent = 'Play'; }
+function start() {
+  pause();
+  if (current === data.frames.length - 1) display(0);
+  play.textContent = 'Pause';
+  timer = setInterval(() => { display(current + 1); if (current === data.frames.length - 1) pause(); }, 4000 / data.framesPerStage / Number(speed.value));
+}
+function jump(offset) { pause(); display((Math.floor(current / data.framesPerStage) + offset) * data.framesPerStage); }
+play.onclick = () => timer ? pause() : start();
+document.getElementById('previous').onclick = () => jump(-1);
+document.getElementById('next').onclick = () => jump(1);
+stage.onchange = () => { pause(); display(Number(stage.value) * data.framesPerStage); };
+seek.oninput = () => { pause(); display(Number(seek.value)); };
+speed.onchange = () => { if (timer) start(); };
+document.addEventListener('keydown', event => {
+  if (['INPUT', 'SELECT', 'BUTTON'].includes(event.target.tagName)) return;
+  if (event.code === 'Space') { event.preventDefault(); play.click(); }
+  if (event.code === 'ArrowRight') { event.preventDefault(); jump(1); }
+  if (event.code === 'ArrowLeft') { event.preventDefault(); jump(-1); }
+  if (event.code === 'Home') { event.preventDefault(); pause(); display(0); }
+});
+display(0);
+</script>
+</html>
